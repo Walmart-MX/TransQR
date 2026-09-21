@@ -1,0 +1,2623 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Administrativo — Transporte CEDIS Walmart Villahermosa</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  /* ════════════════════════════════
+     VARIABLES Y RESET
+  ════════════════════════════════ */
+  :root {
+    --blue:    #0071CE;
+    --yellow:  #FFC220;
+    --dark:    #003087;
+    --surface: #f0f4f9;
+    --white:   #ffffff;
+    --text:    #1e293b;
+    --muted:   #64748b;
+    --border:  #dde4ef;
+    --green:   #25D366;
+    --error:   #dc2626;
+    --radius:  14px;
+    --shadow:  0 4px 24px rgba(0,113,206,0.12);
+    --shadow-lg: 0 8px 40px rgba(0,48,135,0.18);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--surface);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ════════════════════════════════
+     MODAL DE BIENVENIDA
+  ════════════════════════════════ */
+  #modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,48,135,0.72);
+    backdrop-filter: blur(6px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: fadeIn 0.35s ease;
+  }
+  #modal-overlay.hiding {
+    animation: fadeOut 0.3s ease forwards;
+  }
+  @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
+  @keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
+
+  .modal-box {
+    background: white;
+    border-radius: 20px;
+    padding: 32px 28px 28px;
+    max-width: 460px;
+    width: 100%;
+    box-shadow: var(--shadow-lg);
+    animation: slideUp 0.35s ease;
+  }
+  @keyframes slideUp {
+    from { opacity:0; transform: translateY(30px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+
+  .modal-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .modal-spark {
+    width: 56px; height: 56px;
+    background: var(--blue);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 14px;
+    box-shadow: 0 4px 16px rgba(0,113,206,0.35);
+  }
+  .modal-header h2 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--dark);
+    margin-bottom: 6px;
+  }
+  .modal-header p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* Campo No. Empleado dentro del modal */
+  .modal-field {
+    margin-bottom: 22px;
+  }
+  .modal-field label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 7px;
+  }
+  .modal-field label span { color: var(--error); }
+  .modal-field input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+  .modal-field input:focus {
+    outline: none;
+    border-color: var(--blue);
+  }
+  .modal-field-hint {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  /* Tarjetas de selección CEDIS */
+  .modal-subtitle {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--muted);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .cedis-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .cedis-card {
+    border: 2.5px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--surface);
+    position: relative;
+    overflow: hidden;
+  }
+  .cedis-card:hover {
+    border-color: var(--blue);
+    background: #eef5fd;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,113,206,0.15);
+  }
+  .cedis-card .cedis-icon {
+    font-size: 2.4rem;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .cedis-card .cedis-name {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--dark);
+    display: block;
+  }
+  .cedis-card .cedis-desc {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 4px;
+    display: block;
+  }
+  .cedis-card.selected {
+    border-color: var(--blue);
+    background: var(--blue);
+  }
+  .cedis-card.selected .cedis-name,
+  .cedis-card.selected .cedis-desc { color: white; }
+  .cedis-card .check-badge {
+    position: absolute; top: 8px; right: 8px;
+    width: 22px; height: 22px;
+    background: var(--yellow);
+    border-radius: 50%;
+    display: none;
+    align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 900; color: var(--dark);
+  }
+  .cedis-card.selected .check-badge { display: flex; }
+
+  .modal-error {
+    display: none;
+    color: var(--error);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-align: center;
+    margin-top: 12px;
+  }
+  .btn-modal-continue {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: .02em;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: 0 4px 16px rgba(0,113,206,0.3);
+  }
+  .btn-modal-continue:hover   { background: var(--dark); }
+  .btn-modal-continue:active  { transform: scale(0.98); }
+
+  /* ════════════════════════════════
+     HEADER
+  ════════════════════════════════ */
+  header {
+    background: linear-gradient(135deg, var(--dark) 0%, var(--blue) 100%);
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.22);
+  }
+  .header-spark {
+    width: 44px; height: 44px;
+    background: var(--yellow);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(255,194,32,0.4);
+  }
+  .header-info { flex: 1; }
+  header h1 { font-size: 1.05rem; font-weight: 800; line-height: 1.2; }
+  header p  { font-size: 0.75rem; opacity: 0.8; margin-top: 2px; }
+  .header-cedis-badge {
+    background: var(--yellow);
+    color: var(--dark);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    white-space: nowrap;
+  }
+
+  /* ════════════════════════════════
+     TABS
+  ════════════════════════════════ */
+  .tabs {
+    display: flex;
+    background: white;
+    border-bottom: 2px solid var(--border);
+    padding: 0 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .tab {
+    padding: 13px 20px;
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    color: var(--muted);
+    transition: color 0.2s, border-color 0.2s;
+    letter-spacing: .02em;
+  }
+  .tab.active { color: var(--blue); border-color: var(--blue); }
+
+  /* ════════════════════════════════
+     PANELS
+  ════════════════════════════════ */
+  .panel { display: none; padding: 20px 16px 48px; max-width: 680px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  /* ════════════════════════════════
+     FORM CARDS
+  ════════════════════════════════ */
+  .card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(0,113,206,0.06);
+  }
+  .card-title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--blue);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2.5px solid var(--yellow);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .field { margin-bottom: 13px; }
+  label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: var(--text);
+  }
+  label span.req { color: var(--error); margin-left: 2px; }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 10px 13px;
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    font-size: 0.9rem;
+    background: #fafbfd;
+    color: var(--text);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--blue);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(0,113,206,0.1);
+  }
+  textarea { resize: vertical; min-height: 80px; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* Checkboxes */
+  .checks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .check-item {
+    display: flex; align-items: center; gap: 8px;
+    background: #fafbfd;
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    font-size: 0.82rem;
+  }
+  .check-item:has(input:checked) {
+    border-color: var(--blue);
+    background: #e8f2fc;
+    font-weight: 600;
+  }
+  .check-item input[type=checkbox] {
+    width: 16px; height: 16px;
+    accent-color: var(--blue);
+    flex-shrink: 0;
+  }
+
+  /* ════════════════════════════════
+     RESUMEN DE ASOCIADO (v2 — precarga tipo "base de datos")
+  ════════════════════════════════ */
+  .asociado-resumen {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 14px;
+  }
+  .avatar {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), var(--dark));
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,113,206,0.3);
+  }
+  .asociado-info { flex: 1; min-width: 0; }
+  .asociado-nombre {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: var(--dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .asociado-meta {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .btn-editar {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 7px 13px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--blue);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s;
+    font-family: inherit;
+  }
+  .btn-editar:hover { background: #eef5fd; border-color: var(--blue); }
+  .asociado-edit {
+    border-top: 1.5px dashed var(--border);
+    padding-top: 14px;
+    margin-top: 2px;
+  }
+
+  /* Nota de autocompletado (fecha/hora/turno) */
+  .hint-auto {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin: -4px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* ════════════════════════════════
+     CHIPS — TIPO DE REPORTE (v2)
+  ════════════════════════════════ */
+  .chip-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+    border-radius: 12px;
+    transition: outline 0.15s ease;
+  }
+  .chip {
+    border: 1.5px solid var(--border);
+    background: #fafbfd;
+    border-radius: 20px;
+    padding: 9px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .chip:hover { border-color: var(--blue); }
+  .chip.selected {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: white;
+    font-weight: 700;
+  }
+  .chip-grid.invalid {
+    outline: 2px solid var(--error);
+    outline-offset: 5px;
+  }
+
+  /* ════════════════════════════════
+     DESCRIPCIÓN — MAYOR PROTAGONISMO (v2)
+  ════════════════════════════════ */
+  .card-descripcion { border: 1.5px solid rgba(0,113,206,0.18); }
+  .card-descripcion textarea {
+    min-height: 140px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    border-width: 2px;
+  }
+  .char-counter {
+    text-align: right;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ════════════════════════════════
+     BOTÓN WHATSAPP (único)
+  ════════════════════════════════ */
+  .btn-whatsapp {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #25D366, #1da851);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 1.05rem;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: .03em;
+    transition: opacity 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 8px;
+    box-shadow: 0 4px 16px rgba(37,211,102,0.35);
+  }
+  .btn-whatsapp:hover  { opacity: 0.92; }
+  .btn-whatsapp:active { transform: scale(0.98); }
+
+  /* Toast */
+  #toast {
+    display: none;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: white;
+    padding: 14px 20px;
+    border-radius: var(--radius);
+    margin-top: 14px;
+    font-weight: 700;
+    text-align: center;
+    font-size: 0.9rem;
+    animation: slideUp 0.3s ease;
+  }
+
+  /* ════════════════════════════════
+     PANEL QR — DISEÑO CORPORATIVO
+  ════════════════════════════════ */
+  .qr-page {
+    max-width: 500px;
+    margin: 0 auto;
+    padding-bottom: 10px;
+  }
+
+  /* Tarjeta exterior: borde amarillo grueso + azul interno */
+  .qr-card {
+    background: var(--yellow);
+    border-radius: 28px;
+    padding: 7px;
+    box-shadow: 0 8px 40px rgba(0,48,135,0.25);
+  }
+  .qr-card-inner {
+    background: var(--blue);
+    border-radius: 22px;
+    padding: 6px;
+  }
+  .qr-card-white {
+    background: white;
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  /* Zona superior: escenario de ciudad/carretera */
+  .qr-scene {
+    background: var(--blue);
+    padding: 14px 16px 0;
+    position: relative;
+    height: 90px;
+    overflow: hidden;
+  }
+  .qr-scene svg {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0; left: 0;
+  }
+
+  /* Zona central: QR con línea punteada */
+  .qr-center {
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 12px 0;
+    position: relative;
+  }
+
+  /* Bus lateral izquierdo y tren derecho */
+  .qr-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 52px;
+    flex-shrink: 0;
+  }
+  .qr-side svg { width: 38px; }
+
+  /* Contenedor del QR con borde punteado simulando carretera */
+  .qr-code-frame {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .qr-road-border {
+    position: relative;
+    border: 3px dashed var(--blue);
+    border-radius: 14px;
+    padding: 10px;
+    background: white;
+  }
+  #qr-code { display: inline-block; }
+  #qr-code canvas, #qr-code img { display: block; }
+
+  /* Spark central superpuesto */
+  .qr-spark-overlay {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 54px; height: 54px;
+    background: white;
+    border-radius: 50%;
+    border: 2.5px solid var(--blue);
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .spark-svg { width: 36px; height: 36px; }
+
+  /* Pie azul */
+  .qr-footer {
+    background: var(--blue);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .qr-footer-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+  }
+  .qr-box-icon svg { width: 40px; height: 40px; }
+  .qr-footer-slogan {
+    font-size: 0.82rem;
+    font-weight: 800;
+    line-height: 1.35;
+  }
+  .qr-footer-slogan .line1 { color: var(--yellow); }
+  .qr-footer-slogan .line2 { color: var(--yellow); font-style: italic; }
+  .qr-divider {
+    width: 1.5px;
+    height: 40px;
+    background: rgba(255,255,255,0.3);
+    flex-shrink: 0;
+  }
+  .qr-footer-brand {
+    text-align: right;
+    line-height: 1.4;
+    flex-shrink: 0;
+  }
+  .qr-footer-brand .brand-name {
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    justify-content: flex-end;
+  }
+  .qr-footer-brand .brand-sub {
+    color: rgba(255,255,255,0.75);
+    font-size: 0.65rem;
+    margin-top: 2px;
+  }
+
+  /* Botón imprimir */
+  .btn-print {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 14px;
+    padding: 13px;
+    background: var(--yellow);
+    color: var(--dark);
+    border: none;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    box-shadow: 0 4px 14px rgba(255,194,32,0.35);
+  }
+  .btn-print:hover { opacity: 0.88; }
+
+  @media (max-width: 480px) {
+    .qr-steps { grid-template-columns: 1fr; }
+  }
+
+  /* ════════════════════════════════
+     HISTORIAL DE REPORTES (v3)
+  ════════════════════════════════ */
+  .historial-item {
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background: #fafbfd;
+  }
+  .historial-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--dark);
+    margin-bottom: 3px;
+  }
+  .historial-top .historial-tipo {
+    color: var(--blue);
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .historial-desc {
+    color: var(--muted);
+    font-size: 0.76rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .historial-vacio {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.82rem;
+    padding: 22px 0;
+  }
+  .btn-descargar-historial {
+    width: 100%;
+    margin-top: 14px;
+    padding: 13px;
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    box-shadow: 0 4px 14px rgba(0,113,206,0.3);
+  }
+  .btn-descargar-historial:hover { opacity: 0.9; }
+  .btn-borrar-historial {
+    width: 100%;
+    margin-top: 10px;
+    padding: 11px;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--error);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-borrar-historial:hover { border-color: var(--error); background: #fef2f2; }
+  .historial-nota {
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin: -6px 0 14px;
+  }
+  .historial-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 5px;
+  }
+  .historial-tag {
+    background: #eef5fd;
+    color: var(--blue);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .badge-estatus {
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .historial-estatus-editor {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+  }
+  .historial-estatus-editor label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .historial-estatus-editor select {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    font-family: inherit;
+    background: white;
+  }
+  .historial-item textarea {
+    min-height: 50px;
+    font-size: 0.78rem;
+    padding: 8px 10px;
+  }
+  .btn-guardar-seguimiento {
+    width: 100%;
+    margin-top: 8px;
+    padding: 9px;
+    background: var(--dark);
+    color: white;
+    border: none;
+    border-radius: 9px;
+    font-weight: 700;
+    font-size: 0.78rem;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-guardar-seguimiento:hover { opacity: 0.9; }
+  .btn-guardar-seguimiento:disabled { opacity: 0.6; cursor: default; }
+  .seguimiento-estado {
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-top: 6px;
+    min-height: 1em;
+  }
+  .seguimiento-estado.ok { color: #16a34a; }
+  .seguimiento-estado.error { color: var(--error); }
+  .seguimiento-mensaje {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #eef5fd;
+    border-left: 3px solid var(--blue);
+    border-radius: 6px;
+    font-size: 0.76rem;
+    color: var(--dark);
+    line-height: 1.4;
+  }
+  .concentrado-fila {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 9px;
+    font-size: 0.8rem;
+  }
+  .concentrado-etiqueta {
+    flex: 0 0 132px;
+    color: var(--text);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .concentrado-barra-fondo {
+    flex: 1;
+    height: 10px;
+    background: var(--surface);
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex; /* contiene dos segmentos apilados: Perecederos + SECOS */
+  }
+  .concentrado-barra-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+  }
+  .concentrado-num {
+    flex: 0 0 34px;
+    text-align: right;
+    font-weight: 800;
+    color: var(--dark);
+  }
+  .concentrado-leyenda {
+    display: flex;
+    gap: 16px;
+    font-size: 0.74rem;
+    color: var(--muted);
+    font-weight: 600;
+    margin: -4px 0 12px;
+  }
+  .concentrado-leyenda .dot {
+    display: inline-block;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
+  .dot-perecederos { background: var(--blue); }
+  .dot-secos { background: var(--yellow); }
+  .concentrado-barra-fill.seg-perecederos { background: var(--blue); }
+  .concentrado-barra-fill.seg-secos { background: var(--yellow); }
+  .btn-exportar-concentrado {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px;
+    background: white;
+    border: 1.5px solid var(--blue);
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.78rem;
+    color: var(--blue);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-exportar-concentrado:hover { background: #eef5fd; }
+  #tendencia-svg-wrap {
+    margin-top: 10px;
+    overflow-x: auto;
+  }
+  #tendencia-svg-wrap svg { display: block; }
+  .tendencia-vacio {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.82rem;
+    padding: 30px 0;
+  }
+
+  /* ════════════════════════════════
+     RESPONSIVE
+  ════════════════════════════════ */
+  @media (max-width: 480px) {
+    .row-2    { grid-template-columns: 1fr; }
+    .checks   { grid-template-columns: 1fr; }
+    .cedis-cards { grid-template-columns: 1fr 1fr; }
+    .qr-steps { grid-template-columns: 1fr; }
+    .modal-box { padding: 24px 18px 22px; }
+  }
+
+  /* ════════════════════════════════
+     PRINT
+
+  ════════════════════════════════ */
+  @media print {
+    header, .tabs, .btn-print, .panel#panel-historial { display: none !important; }
+    #panel-qr { display: block !important; padding: 0; }
+    .qr-card { box-shadow: none; border: 3px solid var(--yellow); }
+    body { background: white; }
+    #modal-overlay { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     HEADER
+══════════════════════════════════ -->
+<header>
+  <div class="header-spark">🚌</div>
+  <div class="header-info">
+    <h1>Panel Administrativo de Transporte</h1>
+    <p>CEDIS Walmart Villahermosa — Uso exclusivo de Transporte</p>
+  </div>
+  <div class="header-cedis-badge" id="header-cedis-badge">ADMIN</div>
+</header>
+
+<!-- ══════════════════════════════════
+     TABS
+══════════════════════════════════ -->
+<div class="tabs">
+  <div class="tab active" onclick="showTab('qr')">📱 Generar / Imprimir QR</div>
+  <div class="tab" onclick="showTab('asociados')">👥 Asociados</div>
+  <div class="tab" onclick="showTab('rutas')">🛣️ Rutas y Paradas</div>
+  <div class="tab" onclick="showTab('historial')">🔒 Historial y Seguimiento</div>
+</div>
+
+<!-- ══════════════════════════════════
+     PANEL QR — DISEÑO CORPORATIVO 1:1
+══════════════════════════════════ -->
+<div class="panel active" id="panel-qr">
+  <div class="qr-page">
+
+    <!-- ══════════════════════════════════
+         CONTROLES DE GENERACIÓN (Fase 5)
+         El QR ya no apunta a una URL fija: se arma a partir del CEDIS elegido
+         (DIRECTORIO_CEDIS_ADMIN) y la URL base de tu sitio, que se guarda en
+         este navegador para no volver a escribirla cada vez.
+    ══════════════════════════════════ -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-title">⚙️ Generar QR</div>
+      <div class="field">
+        <label>CEDIS</label>
+        <select id="qr-select-cedis" onchange="regenerarQR()"></select>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>URL base de tu sitio <span class="req">*</span></label>
+        <input type="text" id="qr-url-base" placeholder="https://tuusuario.github.io/turepo"
+               oninput="guardarURLBaseYRegenerar()">
+        <div class="modal-field-hint">
+          Se guarda en este navegador. Ej: si publicas en
+          <code>https://tuusuario.github.io/turepo</code>, el QR de Villahermosa
+          apuntará a <code>https://tuusuario.github.io/turepo/cedis/villahermosa/</code>.
+        </div>
+      </div>
+      <div class="hint-auto" id="qr-url-resultado" style="margin-top:10px; word-break:break-all;"></div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-card-inner">
+        <div class="qr-card-white">
+
+          <!-- ESCENARIO SUPERIOR: ciudad + camión sobre carretera -->
+          <div class="qr-scene">
+            <svg viewBox="0 0 500 90" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+              <rect width="500" height="90" fill="#0071CE"/>
+              <path d="M0 80 Q125 55 250 70 Q375 85 500 60 L500 90 L0 90 Z" fill="#005ea6" opacity="0.6"/>
+              <path d="M0 82 Q125 58 250 73 Q375 88 500 63" stroke="white" stroke-width="2.5" fill="none" stroke-dasharray="14,8" opacity="0.7"/>
+              <rect x="12" y="30" width="12" height="52" fill="#003087"/>
+              <rect x="10" y="26" width="16" height="6" fill="#003087"/>
+              <rect x="26" y="42" width="10" height="40" fill="#005ea6"/>
+              <rect x="38" y="35" width="14" height="47" fill="#003087"/>
+              <rect x="54" y="48" width="8" height="34" fill="#005ea6"/>
+              <rect x="14" y="34" width="3" height="3" fill="#FFC220" opacity="0.8"/>
+              <rect x="19" y="34" width="3" height="3" fill="#FFC220" opacity="0.8"/>
+              <rect x="14" y="41" width="3" height="3" fill="#FFC220" opacity="0.8"/>
+              <rect x="19" y="41" width="3" height="3" fill="#FFC220" opacity="0.8"/>
+              <rect x="40" y="39" width="3" height="3" fill="#FFC220" opacity="0.8"/>
+              <rect x="46" y="39" width="3" height="3" fill="#FFC220" opacity="0.8"/>
+              <ellipse cx="75" cy="45" rx="10" ry="13" fill="#003087"/>
+              <rect x="73" y="55" width="4" height="10" fill="#005ea6"/>
+              <rect x="198" y="18" width="104" height="44" rx="5" fill="#003087"/>
+              <rect x="200" y="20" width="100" height="40" rx="4" fill="#0071CE"/>
+              <rect x="280" y="22" width="22" height="36" rx="3" fill="#003087"/>
+              <rect x="283" y="25" width="16" height="14" rx="2" fill="#5ba3d9" opacity="0.7"/>
+              <circle cx="218" cy="64" r="8" fill="#003087"/>
+              <circle cx="218" cy="64" r="4" fill="#666"/>
+              <circle cx="268" cy="64" r="8" fill="#003087"/>
+              <circle cx="268" cy="64" r="4" fill="#666"/>
+              <circle cx="290" cy="64" r="8" fill="#003087"/>
+              <circle cx="290" cy="64" r="4" fill="#666"/>
+              <circle cx="245" cy="40" r="16" fill="white" opacity="0.15"/>
+              <g transform="translate(245,40)">
+                <line x1="0" y1="-10" x2="0" y2="-5" stroke="#FFC220" stroke-width="3" stroke-linecap="round"/>
+                <line x1="8.7" y1="-5" x2="4.3" y2="-2.5" stroke="#FFC220" stroke-width="3" stroke-linecap="round"/>
+                <line x1="8.7" y1="5" x2="4.3" y2="2.5" stroke="#FFC220" stroke-width="3" stroke-linecap="round"/>
+                <line x1="0" y1="10" x2="0" y2="5" stroke="#FFC220" stroke-width="3" stroke-linecap="round"/>
+                <line x1="-8.7" y1="5" x2="-4.3" y2="2.5" stroke="#FFC220" stroke-width="3" stroke-linecap="round"/>
+                <line x1="-8.7" y1="-5" x2="-4.3" y2="-2.5" stroke="#FFC220" stroke-width="3" stroke-linecap="round"/>
+              </g>
+              <ellipse cx="420" cy="42" rx="10" ry="13" fill="#003087"/>
+              <rect x="418" y="52" width="4" height="12" fill="#005ea6"/>
+              <rect x="440" y="32" width="14" height="50" fill="#003087"/>
+              <rect x="456" y="44" width="10" height="38" fill="#005ea6"/>
+              <rect x="468" y="28" width="16" height="54" fill="#003087"/>
+              <rect x="442" y="36" width="3" height="3" fill="#FFC220" opacity="0.8"/>
+              <rect x="448" y="36" width="3" height="3" fill="#FFC220" opacity="0.8"/>
+              <rect x="470" y="32" width="3" height="3" fill="#FFC220" opacity="0.8"/>
+              <rect x="476" y="32" width="3" height="3" fill="#FFC220" opacity="0.8"/>
+            </svg>
+          </div>
+
+          <!-- ZONA CENTRAL: bus | QR con borde punteado | tren -->
+          <div class="qr-center">
+
+            <div class="qr-side">
+              <svg viewBox="0 0 40 80" xmlns="http://www.w3.org/2000/svg">
+                <line x1="20" y1="0" x2="20" y2="80" stroke="#0071CE" stroke-width="3" opacity="0.3"/>
+                <polygon points="20,8 14,20 26,20" fill="#0071CE" opacity="0.4"/>
+                <rect x="6" y="22" width="28" height="42" rx="5" fill="#0071CE"/>
+                <rect x="8" y="25" width="11" height="10" rx="2" fill="#5ba3d9" opacity="0.8"/>
+                <rect x="21" y="25" width="11" height="10" rx="2" fill="#5ba3d9" opacity="0.8"/>
+                <rect x="8" y="38" width="11" height="10" rx="2" fill="#5ba3d9" opacity="0.8"/>
+                <rect x="21" y="38" width="11" height="10" rx="2" fill="#5ba3d9" opacity="0.8"/>
+                <rect x="13" y="50" width="14" height="14" rx="2" fill="#003087"/>
+                <circle cx="13" cy="68" r="6" fill="#003087"/>
+                <circle cx="13" cy="68" r="3" fill="#555"/>
+                <circle cx="27" cy="68" r="6" fill="#003087"/>
+                <circle cx="27" cy="68" r="3" fill="#555"/>
+                <rect x="6" y="36" width="28" height="3" fill="#FFC220"/>
+              </svg>
+            </div>
+
+            <div class="qr-code-frame">
+              <div class="qr-road-border">
+                <div id="qr-code"></div>
+                <div class="qr-spark-overlay">
+                  <svg class="spark-svg" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="20" cy="20" r="19" fill="white" stroke="#0071CE" stroke-width="1.5"/>
+                    <g transform="translate(20,20)">
+                      <line x1="0" y1="-12" x2="0" y2="-6" stroke="#FFC220" stroke-width="3.5" stroke-linecap="round"/>
+                      <line x1="10.4" y1="-6" x2="5.2" y2="-3" stroke="#FFC220" stroke-width="3.5" stroke-linecap="round"/>
+                      <line x1="10.4" y1="6" x2="5.2" y2="3" stroke="#FFC220" stroke-width="3.5" stroke-linecap="round"/>
+                      <line x1="0" y1="12" x2="0" y2="6" stroke="#FFC220" stroke-width="3.5" stroke-linecap="round"/>
+                      <line x1="-10.4" y1="6" x2="-5.2" y2="3" stroke="#FFC220" stroke-width="3.5" stroke-linecap="round"/>
+                      <line x1="-10.4" y1="-6" x2="-5.2" y2="-3" stroke="#FFC220" stroke-width="3.5" stroke-linecap="round"/>
+                    </g>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="qr-side">
+              <svg viewBox="0 0 40 80" xmlns="http://www.w3.org/2000/svg">
+                <line x1="14" y1="0" x2="14" y2="80" stroke="#0071CE" stroke-width="2.5" opacity="0.3"/>
+                <line x1="26" y1="0" x2="26" y2="80" stroke="#0071CE" stroke-width="2.5" opacity="0.3"/>
+                <line x1="10" y1="15" x2="30" y2="15" stroke="#0071CE" stroke-width="2" opacity="0.25"/>
+                <line x1="10" y1="30" x2="30" y2="30" stroke="#0071CE" stroke-width="2" opacity="0.25"/>
+                <line x1="10" y1="45" x2="30" y2="45" stroke="#0071CE" stroke-width="2" opacity="0.25"/>
+                <line x1="10" y1="60" x2="30" y2="60" stroke="#0071CE" stroke-width="2" opacity="0.25"/>
+                <rect x="8" y="20" width="24" height="36" rx="4" fill="#0071CE"/>
+                <rect x="10" y="23" width="9" height="8" rx="2" fill="#5ba3d9" opacity="0.8"/>
+                <rect x="21" y="23" width="9" height="8" rx="2" fill="#5ba3d9" opacity="0.8"/>
+                <rect x="10" y="34" width="9" height="8" rx="2" fill="#5ba3d9" opacity="0.8"/>
+                <rect x="21" y="34" width="9" height="8" rx="2" fill="#5ba3d9" opacity="0.8"/>
+                <rect x="8" y="32" width="24" height="3" fill="#FFC220"/>
+                <rect x="12" y="16" width="16" height="6" rx="3" fill="#003087"/>
+                <rect x="8" y="56" width="24" height="5" rx="2" fill="#003087"/>
+                <circle cx="14" cy="62" r="5" fill="#003087"/>
+                <circle cx="14" cy="62" r="2.5" fill="#555"/>
+                <circle cx="26" cy="62" r="5" fill="#003087"/>
+                <circle cx="26" cy="62" r="2.5" fill="#555"/>
+                <polygon points="20,72 14,80 26,80" fill="#0071CE" opacity="0.35"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- PIE AZUL -->
+          <div class="qr-footer">
+            <div class="qr-footer-left">
+              <div class="qr-box-icon">
+                <svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="10" y="16" width="26" height="22" rx="3" fill="#FFC220"/>
+                  <rect x="10" y="16" width="26" height="8" rx="3" fill="#e6aa00"/>
+                  <line x1="23" y1="16" x2="23" y2="38" stroke="#e6aa00" stroke-width="1.5"/>
+                  <line x1="2" y1="22" x2="9" y2="22" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                  <line x1="1" y1="27" x2="8" y2="27" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+                  <line x1="3" y1="32" x2="9" y2="32" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+                </svg>
+              </div>
+              <div class="qr-footer-slogan">
+                <div class="line1">Conectamos personas,</div>
+                <div class="line2">movemos lo que importa.</div>
+              </div>
+            </div>
+            <div class="qr-divider"></div>
+            <div class="qr-footer-brand">
+              <div class="brand-name">
+                Walmart
+                <svg width="18" height="18" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                  <g transform="translate(20,20)">
+                    <line x1="0" y1="-14" x2="0" y2="-7" stroke="#FFC220" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="12.1" y1="-7" x2="6.1" y2="-3.5" stroke="#FFC220" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="12.1" y1="7" x2="6.1" y2="3.5" stroke="#FFC220" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="0" y1="14" x2="0" y2="7" stroke="#FFC220" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="-12.1" y1="7" x2="-6.1" y2="3.5" stroke="#FFC220" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="-12.1" y1="-7" x2="-6.1" y2="-3.5" stroke="#FFC220" stroke-width="4" stroke-linecap="round"/>
+                  </g>
+                </svg>
+              </div>
+              <div class="brand-sub">México y Centroamérica</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-print" onclick="descargarQR()" style="background:var(--blue); color:white;">⬇️ Descargar QR (PNG)</button>
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir para colocar en paradas</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     PANEL ASOCIADOS — DIRECTORIO (Fase 6)
+     Requiere que la tabla `asociados` tenga las columnas cedis_slug y activo
+     (ver propuesta de esquema en ARQUITECTURA.md). Si Supabase no está
+     configurado, o esas columnas no existen todavía, esta pantalla lo avisa
+     en vez de fallar en silencio.
+══════════════════════════════════ -->
+<div class="panel" id="panel-asociados">
+
+  <div class="card">
+    <div class="card-title">➕ Nuevo / editar asociado</div>
+    <input type="hidden" id="asociado-form-original-numero">
+    <div class="row-2">
+      <div class="field">
+        <label>No. de empleado <span class="req">*</span></label>
+        <input type="text" id="asociado-form-numero" placeholder="Ej. 8155457">
+      </div>
+      <div class="field">
+        <label>Nombre completo <span class="req">*</span></label>
+        <input type="text" id="asociado-form-nombre" placeholder="Ej. Jaime Malaga Martinez">
+      </div>
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>Área / Departamento</label>
+        <input type="text" id="asociado-form-area" placeholder="Ej. TRANSPORTE">
+      </div>
+      <div class="field">
+        <label>Celular</label>
+        <input type="tel" id="asociado-form-celular" placeholder="Ej. 9931234567">
+      </div>
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>CEDIS</label>
+        <select id="asociado-form-cedis"></select>
+      </div>
+      <div class="field">
+        <label>Estado</label>
+        <div class="check-item" style="margin-top:2px;">
+          <input type="checkbox" id="asociado-form-activo" checked>
+          <label for="asociado-form-activo" style="margin:0;">Activo</label>
+        </div>
+      </div>
+    </div>
+    <button class="btn-guardar-seguimiento" id="btn-guardar-asociado" onclick="guardarAsociadoDesdeAdmin()">💾 Guardar asociado</button>
+    <button class="btn-borrar-historial" style="margin-top:8px;" onclick="limpiarFormularioAsociado()">✖️ Cancelar edición / nuevo</button>
+    <div class="seguimiento-estado" id="asociado-form-estado"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">👥 Directorio de asociados</div>
+
+    <div class="row-2">
+      <div class="field">
+        <label>Filtrar por CEDIS</label>
+        <select id="asociados-filtro-cedis" onchange="renderizarAsociados()"></select>
+      </div>
+      <div class="field">
+        <label>Filtrar por estado</label>
+        <select id="asociados-filtro-estado" onchange="renderizarAsociados()">
+          <option value="todos">Todos</option>
+          <option value="activos" selected>Solo activos</option>
+          <option value="inactivos">Solo inactivos</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Buscar por número o nombre</label>
+      <input type="text" id="asociados-buscar" placeholder="Ej. 8155457 o Jaime" oninput="renderizarAsociados()">
+    </div>
+
+    <div class="hint-auto" id="asociados-resumen" style="margin-top:0;">0 asociados encontrados</div>
+    <div id="asociados-lista"></div>
+
+    <div class="historial-estatus-editor" style="border-top:1.5px dashed var(--border); margin-top:16px; padding-top:14px;">
+      <label style="flex-shrink:0;">📥 Importar CSV:</label>
+      <input type="file" id="asociados-importar-input" accept=".csv" onchange="importarAsociadosCSV(event)" style="flex:1; border:none; padding:0; background:none;">
+    </div>
+    <p class="historial-nota" style="margin-top:8px;">
+      Formato esperado (con encabezados): <code>numero_asociado,nombre,area,celular,cedis_slug</code>.
+      Las filas sin <code>cedis_slug</code> se asignan al primer CEDIS del directorio.
+      Los asociados existentes (mismo número) se actualizan; los nuevos se crean como activos.
+    </p>
+    <div class="seguimiento-estado" id="asociados-importar-estado"></div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════
+     PANEL RUTAS Y PARADAS (Fase 8)
+     Requiere las tablas `rutas` y `paradas` (ver esquema propuesto en
+     ARQUITECTURA.md). Si Supabase no está configurado, o esas tablas no
+     existen todavía, esta pantalla lo avisa en vez de fallar en silencio.
+══════════════════════════════════ -->
+<div class="panel" id="panel-rutas">
+
+  <div class="card">
+    <div class="card-title">🛣️ Rutas y Paradas</div>
+    <div class="row-2">
+      <div class="field">
+        <label>CEDIS</label>
+        <select id="rutas-select-cedis" onchange="cambiarCedisEnRutas()"></select>
+      </div>
+      <div class="field">
+        <label>Almacén</label>
+        <select id="rutas-select-almacen" onchange="renderizarRutas()"></select>
+      </div>
+    </div>
+
+    <div class="row-2" style="align-items:flex-end;">
+      <div class="field" style="margin-bottom:0;">
+        <label>Nueva ruta</label>
+        <input type="text" id="rutas-nueva-nombre" placeholder="Ej. Ruta Centro"
+               onkeydown="if(event.key==='Enter'){ event.preventDefault(); crearRuta(); }">
+      </div>
+      <button class="btn-guardar-seguimiento" style="margin-top:0;" onclick="crearRuta()">➕ Agregar ruta</button>
+    </div>
+    <div class="seguimiento-estado" id="rutas-estado-general"></div>
+  </div>
+
+  <div id="rutas-lista"></div>
+
+</div>
+
+<!-- ══════════════════════════════════
+     PANEL HISTORIAL — ARCHIVO DE REPORTES
+══════════════════════════════════ -->
+<div class="panel" id="panel-historial">
+
+  <!-- ═══ CANDADO DE ACCESO: por ahora esta sección es exclusiva del equipo de
+       Transporte (a futuro, "Mis Reportes" queda para cada asociado y esta
+       sección — Historial — solo para Transportes). ═══ -->
+  <div class="card" id="historial-gate">
+    <div class="card-title">🔒 Acceso a Historial</div>
+    <p class="historial-nota" style="margin-top:0;">
+      Esta sección es de uso exclusivo del equipo de Transporte. Ingresa la
+      contraseña para continuar.
+    </p>
+    <div class="modal-field" style="margin-bottom:6px;">
+      <label>Contraseña</label>
+      <input type="password" id="historial-password" placeholder="••••" maxlength="10"
+             onkeydown="if(event.key==='Enter'){ event.preventDefault(); validarAccesoHistorial(); }">
+    </div>
+    <div class="modal-error" id="historial-password-error">⚠️ Contraseña incorrecta, intenta de nuevo.</div>
+    <button class="btn-modal-continue" onclick="validarAccesoHistorial()">Entrar →</button>
+  </div>
+
+  <!-- ═══ CONTENIDO REAL DEL HISTORIAL: oculto hasta validar la contraseña ═══ -->
+  <div id="historial-contenido" style="display:none;">
+    <div class="card">
+      <div class="card-title">🗂️ Historial de Reportes</div>
+      <p class="historial-nota" id="historial-nota-central">
+        Cada reporte enviado desde este teléfono/navegador queda guardado aquí automáticamente,
+        para que puedas consultarlo o descargarlo por día, semana o mes cuando lo necesites.
+      </p>
+
+      <!-- Vista: Lista de reportes vs Tendencia semanal -->
+      <div class="chip-grid" id="chip-vista-historial">
+        <div class="chip selected" data-vista="lista" onclick="cambiarVistaHistorial('lista')">🗂️ Lista</div>
+        <div class="chip" data-vista="tendencia" onclick="cambiarVistaHistorial('tendencia')">📈 Tendencia semanal</div>
+      </div>
+
+      <!-- Filtro por almacén (esto es lo que antes se llamaba "CEDIS" — ver
+           nota de la Fase 7 en ARQUITECTURA.md: Perecederos/SECOS son
+           almacenes dentro de un mismo CEDIS, no CEDIS distintos) -->
+      <div class="field" style="margin-top:14px;">
+        <label>Almacén</label>
+        <div class="chip-grid" id="chip-filtro-cedis">
+          <div class="chip selected" data-cedis="Ambos" onclick="filtrarPorCedis('Ambos')">Ambos</div>
+          <div class="chip" data-cedis="Perecederos" onclick="filtrarPorCedis('Perecederos')">🥦 Perecederos</div>
+          <div class="chip" data-cedis="SECOS" onclick="filtrarPorCedis('SECOS')">📦 SECOS</div>
+        </div>
+      </div>
+
+      <!-- Filtro por CEDIS real (Fase 7: cedis_slug). Hoy solo hay una opción,
+           pero ya queda operativo para cuando exista un segundo CEDIS. -->
+      <div class="field" style="margin-top:14px;">
+        <label>CEDIS</label>
+        <div class="chip-grid" id="chip-filtro-cedis-real"></div>
+      </div>
+
+      <!-- Filtro por situación observada -->
+      <div class="field" style="margin-top:14px;">
+        <label>Filtrar por situación observada</label>
+        <div class="chip-grid" id="chip-filtro-situacion"></div>
+      </div>
+
+      <!-- ═══ CUERPO: VISTA LISTA ═══ -->
+      <div id="historial-cuerpo-lista">
+        <!-- Filtros rápidos de fecha -->
+        <div class="chip-grid" id="chip-filtro-historial" style="margin-top:14px;">
+          <div class="chip selected" data-filtro="hoy" onclick="aplicarFiltroRapido(this,'hoy')">Hoy</div>
+          <div class="chip" data-filtro="semana" onclick="aplicarFiltroRapido(this,'semana')">Esta semana</div>
+          <div class="chip" data-filtro="mes" onclick="aplicarFiltroRapido(this,'mes')">Este mes</div>
+          <div class="chip" data-filtro="todo" onclick="aplicarFiltroRapido(this,'todo')">Todo</div>
+        </div>
+
+        <!-- Rango personalizado -->
+        <div class="row-2" style="margin-top:14px;">
+          <div class="field">
+            <label>Desde</label>
+            <input type="date" id="historial-desde" onchange="marcarFiltroPersonalizado()">
+          </div>
+          <div class="field">
+            <label>Hasta</label>
+            <input type="date" id="historial-hasta" onchange="marcarFiltroPersonalizado()">
+          </div>
+        </div>
+
+        <div class="hint-auto" id="historial-resumen" style="margin-top:0;">0 reportes encontrados</div>
+
+        <!-- Concentrado por situación, comparado por CEDIS (preview) -->
+        <div id="concentrado-situaciones" class="card" style="margin-top:14px; padding:16px; display:none;">
+          <div class="card-title" style="font-size:0.95rem;">📊 Concentrado por situación (rango seleccionado)</div>
+          <div class="concentrado-leyenda">
+            <span><span class="dot dot-perecederos"></span> Perecederos</span>
+            <span><span class="dot dot-secos"></span> SECOS</span>
+          </div>
+          <div id="concentrado-lista"></div>
+          <button class="btn-exportar-concentrado" onclick="descargarConcentradoCSV()">⬇️ Exportar concentrado (CSV)</button>
+        </div>
+
+        <div id="historial-lista"></div>
+
+        <button class="btn-descargar-historial" onclick="descargarHistorialCSV()">⬇️ Descargar CSV del rango seleccionado</button>
+        <button class="btn-borrar-historial" onclick="reintentarPendientesManual()">🔄 Reintentar reportes pendientes sin conexión</button>
+      </div>
+
+      <!-- ═══ CUERPO: VISTA TENDENCIA SEMANAL ═══ -->
+      <div id="historial-cuerpo-tendencia" style="display:none;">
+        <p class="historial-nota" style="margin-top:14px;">
+          Muestra el total de reportes por semana de las últimas 8 semanas (usa los filtros de
+          CEDIS y situación de arriba, pero no el rango de fechas — siempre mira 8 semanas atrás).
+        </p>
+        <div id="tendencia-svg-wrap"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
+<!-- ══════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════ -->
+<script>
+  /* ════════════════════════════════
+     1. CONFIGURACIÓN Y "BASE DE DATOS" SIMULADA
+     Todo lo que en el futuro vendrá de un backend real vive aislado aquí,
+     para que sustituirlo por llamadas reales sea un cambio de una sola pieza.
+  ════════════════════════════════ */
+  // ── Conexión a Supabase ──────────────────────────────────────────────
+  // Reemplaza estos dos valores con los de TU proyecto de Supabase:
+  //   Panel de Supabase → Project Settings → API
+  //     - "Project URL"      → SUPABASE_URL
+  //     - "anon public" key  → SUPABASE_ANON_KEY
+  // La anon key es pública por diseño (viaja en el navegador de todos los asociados);
+  // la seguridad real la dan las políticas de Row Level Security (RLS) definidas
+  // en la tabla, no el secreto de esta llave. Ver el script SQL entregado aparte.
+  const SUPABASE_URL      = 'https://dxixxpyfpenubyefztvz.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4aXh4cHlmcGVudWJ5ZWZ6dHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwMDk1OTEsImV4cCI6MjEwNDU4NTU5MX0.BgbFPeXqmxlmNm1ADr9qw9W92wFk_cPfPEMyYwqVCJ4';
+  const NOMBRE_TABLA           = 'reportes_transporte';
+  const NOMBRE_TABLA_ASOCIADOS = 'asociados';
+
+  const supabaseClient = (SUPABASE_URL.includes('TU-PROYECTO'))
+    ? null // todavía no configurado: la app sigue funcionando, solo sin historial compartido
+    : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // NOTA (Fase 1 — modularización): la precarga de asociado por número
+  // (buscarAsociadoPorNumero, caché local, guardarAsociadoDesdeReporte) y las
+  // paradas por CEDIS (PARADAS_PERECEDEROS/SECOS) se removieron de este archivo:
+  // solo se usaban en el formulario de reporte, que ahora vive exclusivamente
+  // en asociado.html. El futuro "Directorio de asociados" (Fase 6) y el
+  // catálogo dinámico de rutas/paradas (Fase 8) se administrarán aquí más
+  // adelante con sus propias pantallas de Administración.
+
+  /*
+    NOTA (Fase 5 — QR por CEDIS): admin solo necesita slug + nombre de cada
+    CEDIS para armar la URL del QR — no necesita almacenes, paradas ni
+    WhatsApp (eso vive en asociado.html). Por eso es una copia reducida del
+    DIRECTORIO_CEDIS de asociado.html, no el mismo objeto completo. Cuando
+    exista la tabla `cedis` en Supabase (Fase 3), ambos archivos consultan la
+    misma fuente y esta duplicación desaparece — hoy hay que mantener las dos
+    listas de slugs sincronizadas a mano si agregas un CEDIS nuevo.
+  */
+  const DIRECTORIO_CEDIS_ADMIN = [
+    {
+      slug: 'villahermosa',
+      nombre: 'CEDIS Walmart Villahermosa',
+      almacenes: [
+        { slug: 'perecederos', nombre: 'Perecederos' },
+        { slug: 'secos', nombre: 'SECOS' },
+      ],
+    },
+    // Al agregar un CEDIS real en asociado.html, agrega su entrada completa
+    // (slug, nombre, almacenes) aquí también.
+  ];
+  const CLAVE_URL_BASE_QR = 'wm_transporte_admin_url_base';
+  const NOMBRE_TABLA_RUTAS   = 'rutas';   // Fase 8
+  const NOMBRE_TABLA_PARADAS = 'paradas'; // Fase 8
+
+  // Catálogo de estatus del historial personal ("Mis Reportes"). El estatus real de
+  // cada reporte se actualiza por el equipo de Transporte directamente en la columna
+  // `estatus` de la tabla `reportes_transporte` en Supabase; la app solo lo consulta
+  // y lo muestra con colores para que el asociado sepa en qué va su reporte.
+  const ESTATUS_CATALOGO = {
+    'Enviado':     { etiqueta: '📨 Enviado',              color: '#0071CE' },
+    'En revisión': { etiqueta: '🔍 En proceso de revisión', color: '#d97706' },
+    'Resuelto':    { etiqueta: '✅ Reporte finalizado',    color: '#16a34a' },
+    'No procede':  { etiqueta: '⛔ No procede',            color: '#64748b' },
+  };
+
+
+  // Catálogo único de situaciones — se reutiliza en el formulario, el filtro del
+  // historial y el concentrado. Si agregas una situación nueva al formulario (los
+  // checkboxes con name="sit"), agrégala aquí también con el mismo "valor".
+  const SITUACIONES_CATALOGO = [
+    { valor: 'Retraso',   etiqueta: 'Retraso en servicio' },
+    { valor: 'Limpieza',  etiqueta: 'Falta de limpieza' },
+    { valor: 'Velocidad', etiqueta: 'Exceso de velocidad' },
+    { valor: 'Trato',     etiqueta: 'Mal trato del operador' },
+    { valor: 'Mecanico',  etiqueta: 'Falla mecánica' },
+    { valor: 'Accidente', etiqueta: 'Accidente / Incidente' },
+    { valor: 'Clima',     etiqueta: 'A/C o calefacción' },
+    { valor: 'Otro',      etiqueta: 'Otro' },
+  ];
+
+  /* ════════════════════════════════
+     6. TABS
+  ════════════════════════════════ */
+  function showTab(name) {
+    document.querySelectorAll('.tab').forEach((t, i) =>
+      t.classList.toggle('active', ['qr', 'asociados', 'rutas', 'historial'][i] === name)
+    );
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+
+    if (name === 'asociados') {
+      renderizarAsociados();
+    }
+    if (name === 'rutas') {
+      renderizarRutas();
+    }
+    if (name === 'historial' && historialDesbloqueado) {
+      // Ya validó la contraseña antes: refresca la vista que esté activa
+      if (vistaHistorialActiva === 'tendencia') renderizarTendencia();
+      else renderizarHistorial();
+    }
+  }
+
+  /* ════════════════════════════════
+     6-B. ACCESO A HISTORIAL (candado con contraseña)
+     Por ahora es una contraseña fija y sin backend propio: suficiente para que
+     solo el equipo de Transporte entre a esta sección, sin bloquear "Mis
+     Reportes" (que es para cada asociado). Si más adelante quieres una
+     contraseña por usuario o expiración de sesión, aquí es donde se
+     conectaría un login real.
+  ════════════════════════════════ */
+  const HISTORIAL_PASSWORD = '6154';
+  let historialDesbloqueado = false;
+
+  function validarAccesoHistorial() {
+    const input = document.getElementById('historial-password');
+    const error = document.getElementById('historial-password-error');
+
+    if (input.value.trim() === HISTORIAL_PASSWORD) {
+      historialDesbloqueado = true;
+      document.getElementById('historial-gate').style.display = 'none';
+      document.getElementById('historial-contenido').style.display = 'block';
+      input.value = '';
+      error.style.display = 'none';
+      if (vistaHistorialActiva === 'tendencia') renderizarTendencia();
+      else renderizarHistorial();
+    } else {
+      error.style.display = 'block';
+    }
+  }
+
+  // Etiqueta legible para mostrar el arreglo de situaciones en texto (usada en CSV y tarjetas)
+  function formatearSituaciones(situaciones) {
+    if (!situaciones || !situaciones.length) return 'Ninguna seleccionada';
+    return situaciones.join(', ');
+  }
+
+  /* ════════════════════════════════
+     11. HISTORIAL DE REPORTES (Supabase — compartido entre todos los asociados)
+     Cada reporte enviado se guarda en la tabla `reportes_transporte` de Supabase,
+     así que el historial se ve igual desde cualquier teléfono o computadora que
+     abra esta misma app: ya no es un archivo local por dispositivo.
+
+     RESILIENCIA SIN INTERNET: si el guardado en Supabase falla (sin señal, etc.),
+     el reporte NO se pierde: se guarda en una cola local ("pendientes") y se
+     reintenta enviar automáticamente la próxima vez que la app cargue con internet.
+  ════════════════════════════════ */
+  const CLAVE_PENDIENTES = 'wm_transporte_pendientes_v1';
+  let filtroHistorialActivo = 'hoy';
+  let filtroSituacionSeleccionada = new Set(); // vacío = todas las situaciones
+  let filtroCedisActivo = 'Ambos'; // 'Ambos' | 'Perecederos' | 'SECOS' — esto es ALMACÉN, no CEDIS (ver Fase 7)
+  let filtroCedisRealActivo = 'todos'; // 'todos' | slug de DIRECTORIO_CEDIS_ADMIN — CEDIS real (Fase 7)
+  let vistaHistorialActiva = 'lista'; // 'lista' | 'tendencia'
+  let ultimosResultadosHistorial = []; // cache del último fetch, para exportar a CSV
+  let ultimoConcentradoCalculado = []; // cache del último concentrado, para exportar a CSV
+
+  function obtenerPendientes() {
+    try {
+      return JSON.parse(localStorage.getItem(CLAVE_PENDIENTES)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function guardarPendienteLocal(datos) {
+    const pendientes = obtenerPendientes();
+    pendientes.push(datos);
+    try {
+      localStorage.setItem(CLAVE_PENDIENTES, JSON.stringify(pendientes));
+    } catch (e) {
+      console.warn('No se pudo encolar el reporte pendiente:', e);
+    }
+  }
+
+  // Inserta un reporte en Supabase. Si no hay conexión configurada o falla la red,
+  // el reporte se guarda en la cola local para reintentarlo después — nunca se pierde.
+  async function guardarEnHistorial(datos) {
+    if (!supabaseClient) { guardarPendienteLocal(datos); return; }
+    const { error } = await supabaseClient.from(NOMBRE_TABLA).insert([datos]);
+    if (error) {
+      console.warn('No se pudo guardar en Supabase, se encola localmente:', error);
+      guardarPendienteLocal(datos);
+    }
+  }
+
+  // Reintenta enviar todos los reportes que quedaron pendientes por falta de conexión.
+  async function sincronizarPendientes() {
+    if (!supabaseClient) return;
+    const pendientes = obtenerPendientes();
+    if (!pendientes.length) return;
+
+    const exitosos = [];
+    for (const datos of pendientes) {
+      const { error } = await supabaseClient.from(NOMBRE_TABLA).insert([datos]);
+      if (!error) exitosos.push(datos);
+    }
+    const restantes = pendientes.filter(p => !exitosos.includes(p));
+    localStorage.setItem(CLAVE_PENDIENTES, JSON.stringify(restantes));
+    // Refresca el historial si estaba abierto
+    if (exitosos.length && historialDesbloqueado) {
+      if (vistaHistorialActiva === 'tendencia') renderizarTendencia();
+      else renderizarHistorial();
+    }
+  }
+
+  // Alterna entre la vista de Lista y la de Tendencia semanal dentro del historial.
+  function cambiarVistaHistorial(vista) {
+    vistaHistorialActiva = vista;
+    document.querySelectorAll('#chip-vista-historial .chip').forEach(c =>
+      c.classList.toggle('selected', c.dataset.vista === vista)
+    );
+    document.getElementById('historial-cuerpo-lista').style.display = vista === 'lista' ? 'block' : 'none';
+    document.getElementById('historial-cuerpo-tendencia').style.display = vista === 'tendencia' ? 'block' : 'none';
+
+    if (vista === 'lista') renderizarHistorial();
+    else renderizarTendencia();
+  }
+
+  // Filtra por CEDIS (Ambos / Perecederos / SECOS). Afecta tanto la lista como la tendencia.
+  function filtrarPorCedis(valor) {
+    filtroCedisActivo = valor;
+    document.querySelectorAll('#chip-filtro-cedis .chip').forEach(c =>
+      c.classList.toggle('selected', c.dataset.cedis === valor)
+    );
+    if (vistaHistorialActiva === 'lista') renderizarHistorial();
+    else renderizarTendencia();
+  }
+
+  // Pinta los chips del filtro por CEDIS real (Fase 7) a partir de
+  // DIRECTORIO_CEDIS_ADMIN — hoy una sola opción, pero ya queda operativo.
+  function renderizarChipsCedisReal() {
+    const cont = document.getElementById('chip-filtro-cedis-real');
+    const chipTodos = `<div class="chip selected" data-cedis-real="todos" onclick="filtrarPorCedisReal('todos')">Todos</div>`;
+    const chips = DIRECTORIO_CEDIS_ADMIN.map(c =>
+      `<div class="chip" data-cedis-real="${c.slug}" onclick="filtrarPorCedisReal('${c.slug}')">${c.nombre}</div>`
+    ).join('');
+    cont.innerHTML = chipTodos + chips;
+  }
+
+  function filtrarPorCedisReal(slug) {
+    filtroCedisRealActivo = slug;
+    document.querySelectorAll('#chip-filtro-cedis-real .chip').forEach(c =>
+      c.classList.toggle('selected', c.dataset.cedisReal === slug)
+    );
+    if (vistaHistorialActiva === 'lista') renderizarHistorial();
+    else renderizarTendencia();
+  }
+
+  // Pinta los chips de situación (una sola vez, al cargar la app) con "Todas" + el catálogo.
+  function renderizarChipsSituacion() {
+    const cont = document.getElementById('chip-filtro-situacion');
+    const chipTodas = `<div class="chip selected" data-valor="" onclick="toggleFiltroSituacion(null)">Todas</div>`;
+    const chips = SITUACIONES_CATALOGO.map(s =>
+      `<div class="chip" data-valor="${s.valor}" onclick="toggleFiltroSituacion('${s.valor}')">${s.etiqueta}</div>`
+    ).join('');
+    cont.innerHTML = chipTodas + chips;
+  }
+
+  // Selección múltiple: se pueden marcar varias situaciones a la vez (ej. Retraso + Mecánico).
+  // Elegir "Todas" limpia cualquier selección específica.
+  function toggleFiltroSituacion(valor) {
+    if (valor === null) {
+      filtroSituacionSeleccionada.clear();
+    } else {
+      if (filtroSituacionSeleccionada.has(valor)) filtroSituacionSeleccionada.delete(valor);
+      else filtroSituacionSeleccionada.add(valor);
+    }
+
+    document.querySelectorAll('#chip-filtro-situacion .chip').forEach(c => {
+      const esTodas = c.dataset.valor === '';
+      c.classList.toggle('selected',
+        filtroSituacionSeleccionada.size === 0 ? esTodas : filtroSituacionSeleccionada.has(c.dataset.valor)
+      );
+    });
+
+    if (vistaHistorialActiva === 'lista') renderizarHistorial();
+    else renderizarTendencia();
+  }
+
+  // Cuenta cuántas veces aparece cada situación dentro de los reportes ya filtrados por
+  // fecha (y, si aplica, por CEDIS/situación), desglosado Perecederos vs SECOS — el
+  // "preview" del concentrado semanal/mensual/etc. Se recalcula con cualquier filtro.
+  function renderizarConcentrado(resultados) {
+    const cont = document.getElementById('concentrado-situaciones');
+    const lista = document.getElementById('concentrado-lista');
+
+    const conteo = {}; // { valor: { perecederos: n, secos: n } }
+    SITUACIONES_CATALOGO.forEach(s => conteo[s.valor] = { perecederos: 0, secos: 0 });
+    resultados.forEach(r => {
+      const clave = r.cedis === 'Perecederos' ? 'perecederos' : 'secos';
+      (r.situaciones || []).forEach(v => {
+        if (!conteo[v]) conteo[v] = { perecederos: 0, secos: 0 }; // por si se agrega un valor nuevo
+        conteo[v][clave]++;
+      });
+    });
+
+    const filas = Object.entries(conteo)
+      .map(([valor, c]) => ({ valor, ...c, total: c.perecederos + c.secos }))
+      .filter(f => f.total > 0)
+      .sort((a, b) => b.total - a.total);
+
+    ultimoConcentradoCalculado = filas; // se reutiliza en descargarConcentradoCSV()
+
+    if (!filas.length) { cont.style.display = 'none'; return; }
+    cont.style.display = 'block';
+
+    const maximo = filas[0].total;
+    lista.innerHTML = filas.map(f => {
+      const etiqueta = (SITUACIONES_CATALOGO.find(s => s.valor === f.valor) || {}).etiqueta || f.valor;
+      const pctPerecederos = Math.round((f.perecederos / maximo) * 100);
+      const pctSecos       = Math.round((f.secos / maximo) * 100);
+      return `
+        <div class="concentrado-fila">
+          <span class="concentrado-etiqueta">${etiqueta}</span>
+          <span class="concentrado-barra-fondo">
+            <span class="concentrado-barra-fill seg-perecederos" style="width:${pctPerecederos}%"></span>
+            <span class="concentrado-barra-fill seg-secos" style="width:${pctSecos}%"></span>
+          </span>
+          <span class="concentrado-num">${f.total}</span>
+        </div>`;
+    }).join('');
+  }
+
+  // Exporta el concentrado (situación + conteo por CEDIS) a CSV, sin tener que abrir
+  // ni descargar la tabla completa de reportes.
+  function descargarConcentradoCSV() {
+    if (!ultimoConcentradoCalculado.length) { alert('No hay concentrado para exportar en este rango.'); return; }
+
+    const encabezados = ['Situación', 'Perecederos', 'SECOS', 'Total'];
+    const filas = ultimoConcentradoCalculado.map(f => {
+      const etiqueta = (SITUACIONES_CATALOGO.find(s => s.valor === f.valor) || {}).etiqueta || f.valor;
+      return [etiqueta, f.perecederos, f.secos, f.total];
+    });
+
+    const escaparCSV = valor => `"${String(valor ?? '').replace(/"/g, '""')}"`;
+    const csv = [encabezados, ...filas].map(fila => fila.map(escaparCSV).join(',')).join('\n');
+
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const enlace = document.createElement('a');
+    enlace.href = URL.createObjectURL(blob);
+    enlace.download = `concentrado_situaciones_${filtroHistorialActivo}_${formatearFechaLocal(new Date())}.csv`;
+    enlace.click();
+    URL.revokeObjectURL(enlace.href);
+  }
+
+  function inicioDeSemana(fecha) {
+    const d = new Date(fecha);
+    const dia = d.getDay(); // 0 = domingo
+    const diff = (dia === 0 ? -6 : 1) - dia; // usa lunes como inicio de semana
+    d.setDate(d.getDate() + diff);
+    return d;
+  }
+
+  function formatearFechaLocal(fecha) {
+    // Evita desfases de zona horaria al convertir a "YYYY-MM-DD"
+    const y = fecha.getFullYear();
+    const m = String(fecha.getMonth() + 1).padStart(2, '0');
+    const d = String(fecha.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  /* ════════════════════════════════
+     TENDENCIA SEMANAL (últimas 8 semanas)
+     Usa los filtros de CEDIS y situación activos, pero ignora el rango de fechas
+     de la vista de Lista: siempre mira las últimas SEMANAS_TENDENCIA semanas.
+  ════════════════════════════════ */
+  const SEMANAS_TENDENCIA = 8;
+
+  function formatearEtiquetaSemana(fecha) {
+    return `${String(fecha.getDate()).padStart(2, '0')}/${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  async function renderizarTendencia() {
+    if (!historialDesbloqueado) return; // no consultar/mostrar nada hasta validar la contraseña
+    const wrap = document.getElementById('tendencia-svg-wrap');
+    if (!supabaseClient) {
+      wrap.innerHTML = '<div class="tendencia-vacio">Supabase todavía no está configurado.</div>';
+      return;
+    }
+    wrap.innerHTML = '<div class="tendencia-vacio">Cargando…</div>';
+
+    // Semana más antigua a incluir: inicio de semana, hace (SEMANAS_TENDENCIA - 1) semanas
+    const inicioMasAntiguo = inicioDeSemana(new Date());
+    inicioMasAntiguo.setDate(inicioMasAntiguo.getDate() - 7 * (SEMANAS_TENDENCIA - 1));
+
+    let consulta = supabaseClient.from(NOMBRE_TABLA).select('fecha, situaciones, cedis')
+      .gte('fecha', formatearFechaLocal(inicioMasAntiguo));
+    if (filtroCedisActivo !== 'Ambos') consulta = consulta.eq('cedis', filtroCedisActivo);
+    if (filtroCedisRealActivo !== 'todos') consulta = consulta.eq('cedis_slug', filtroCedisRealActivo);
+    if (filtroSituacionSeleccionada.size > 0) consulta = consulta.overlaps('situaciones', [...filtroSituacionSeleccionada]);
+
+    const { data, error } = await consulta;
+    if (error) {
+      console.warn('No se pudo consultar la tendencia en Supabase:', error);
+      wrap.innerHTML = '<div class="tendencia-vacio">No se pudo cargar la tendencia.</div>';
+      return;
+    }
+
+    // Prepara los "cubetas" de semana (una por cada una de las últimas N semanas)
+    const semanas = [];
+    for (let i = 0; i < SEMANAS_TENDENCIA; i++) {
+      const inicio = new Date(inicioMasAntiguo);
+      inicio.setDate(inicio.getDate() + 7 * i);
+      semanas.push({ inicio, etiqueta: formatearEtiquetaSemana(inicio), total: 0 });
+    }
+
+    (data || []).forEach(r => {
+      const inicioSemanaReporte = formatearFechaLocal(inicioDeSemana(new Date(r.fecha + 'T00:00:00')));
+      const cubeta = semanas.find(s => formatearFechaLocal(s.inicio) === inicioSemanaReporte);
+      if (cubeta) cubeta.total++;
+    });
+
+    if (!semanas.some(s => s.total > 0)) {
+      wrap.innerHTML = '<div class="tendencia-vacio">Sin reportes en las últimas 8 semanas para este filtro.</div>';
+      return;
+    }
+
+    wrap.innerHTML = construirSVGBarras(semanas);
+  }
+
+  // Dibuja un gráfico de barras simple en SVG puro (sin librerías externas) a partir
+  // de un arreglo [{ etiqueta, total }]. Pensado para caber bien en pantallas de celular.
+  function construirSVGBarras(semanas) {
+    const ancho = 320, alto = 180;
+    const margenInferior = 26, margenSuperior = 18;
+    const altoUtil = alto - margenInferior - margenSuperior;
+    const maximo = Math.max(...semanas.map(s => s.total), 1);
+    const anchoBarra = (ancho / semanas.length) * 0.55;
+    const espacio = ancho / semanas.length;
+
+    const barras = semanas.map((s, i) => {
+      const h = Math.round((s.total / maximo) * altoUtil);
+      const x = i * espacio + (espacio - anchoBarra) / 2;
+      const y = margenSuperior + (altoUtil - h);
+      return `
+        <rect x="${x.toFixed(1)}" y="${y}" width="${anchoBarra.toFixed(1)}" height="${h}" rx="4" fill="var(--blue, #0071CE)"></rect>
+        <text x="${(x + anchoBarra / 2).toFixed(1)}" y="${y - 5}" font-size="10" font-weight="700" text-anchor="middle" fill="#003087">${s.total}</text>
+        <text x="${(x + anchoBarra / 2).toFixed(1)}" y="${alto - 8}" font-size="9" text-anchor="middle" fill="#64748b">${s.etiqueta}</text>
+      `;
+    }).join('');
+
+    return `<svg viewBox="0 0 ${ancho} ${alto}" width="100%" style="max-width:${ancho}px;">${barras}</svg>`;
+  }
+
+  function aplicarFiltroRapido(chipEl, tipo) {
+    filtroHistorialActivo = tipo;
+    document.querySelectorAll('#chip-filtro-historial .chip').forEach(c => c.classList.remove('selected'));
+    chipEl.classList.add('selected');
+
+    const hoy = new Date();
+    let desde = null, hasta = null;
+
+    if (tipo === 'hoy') {
+      desde = hasta = hoy;
+    } else if (tipo === 'semana') {
+      desde = inicioDeSemana(hoy);
+      hasta = hoy;
+    } else if (tipo === 'mes') {
+      desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+      hasta = hoy;
+    }
+    // tipo === 'todo' deja desde/hasta en null (sin límite)
+
+    document.getElementById('historial-desde').value = desde ? formatearFechaLocal(desde) : '';
+    document.getElementById('historial-hasta').value = hasta ? formatearFechaLocal(hasta) : '';
+
+    renderizarHistorial();
+  }
+
+  function marcarFiltroPersonalizado() {
+    document.querySelectorAll('#chip-filtro-historial .chip').forEach(c => c.classList.remove('selected'));
+    filtroHistorialActivo = 'personalizado';
+    renderizarHistorial();
+  }
+
+  // Trae del servidor (Supabase) los reportes dentro del rango de fechas y, si aplica,
+  // dentro de las situaciones seleccionadas en los chips.
+  async function filtrarHistorial() {
+    const desdeStr = document.getElementById('historial-desde').value;
+    const hastaStr = document.getElementById('historial-hasta').value;
+
+    if (!supabaseClient) return []; // aún no configurado
+
+    let consulta = supabaseClient.from(NOMBRE_TABLA).select('*');
+    if (desdeStr) consulta = consulta.gte('fecha', desdeStr);
+    if (hastaStr) consulta = consulta.lte('fecha', hastaStr);
+    if (filtroCedisActivo !== 'Ambos') consulta = consulta.eq('cedis', filtroCedisActivo);
+    if (filtroCedisRealActivo !== 'todos') consulta = consulta.eq('cedis_slug', filtroCedisRealActivo);
+    // "overlaps": trae el reporte si comparte AL MENOS UNA de las situaciones marcadas
+    if (filtroSituacionSeleccionada.size > 0) {
+      consulta = consulta.overlaps('situaciones', [...filtroSituacionSeleccionada]);
+    }
+    consulta = consulta.order('fecha', { ascending: false }).order('hora', { ascending: false });
+
+    const { data, error } = await consulta;
+    if (error) {
+      console.warn('No se pudo consultar el historial en Supabase:', error);
+      return [];
+    }
+    return data || [];
+  }
+
+  async function renderizarHistorial() {
+    if (!historialDesbloqueado) return; // no consultar/mostrar nada hasta validar la contraseña
+    const lista = document.getElementById('historial-lista');
+
+    if (!supabaseClient) {
+      lista.innerHTML = '<div class="historial-vacio">Supabase todavía no está configurado (ver SUPABASE_URL / SUPABASE_ANON_KEY en el código).</div>';
+      document.getElementById('historial-resumen').textContent = '0 reportes encontrados';
+      document.getElementById('concentrado-situaciones').style.display = 'none';
+      return;
+    }
+
+    lista.innerHTML = '<div class="historial-vacio">Cargando…</div>';
+    const resultados = await filtrarHistorial();
+    ultimosResultadosHistorial = resultados;
+
+    document.getElementById('historial-resumen').textContent =
+      `${resultados.length} reporte${resultados.length === 1 ? '' : 's'} encontrado${resultados.length === 1 ? '' : 's'}`;
+
+    renderizarConcentrado(resultados);
+
+    if (!resultados.length) {
+      lista.innerHTML = '<div class="historial-vacio">Sin reportes en este rango todavía.</div>';
+      return;
+    }
+
+    lista.innerHTML = resultados.map(r => {
+      const cedisInfo = DIRECTORIO_CEDIS_ADMIN.find(c => c.slug === r.cedis_slug);
+      return `
+      <div class="historial-item">
+        <div class="historial-top">
+          <span>${r.fecha} · ${r.hora} · ${cedisInfo ? cedisInfo.nombre : (r.cedis_slug || 'CEDIS sin dato')}</span>
+          <span class="historial-tipo">${r.tipo_reporte}</span>
+        </div>
+        <div class="historial-desc">${r.nombre} — ${r.descripcion}</div>
+        ${(r.situaciones && r.situaciones.length) ? `
+          <div class="historial-tags">
+            ${r.situaciones.map(v => `<span class="historial-tag">${(SITUACIONES_CATALOGO.find(s => s.valor === v) || {}).etiqueta || v}</span>`).join('')}
+          </div>` : ''}
+
+        <!-- Editor de seguimiento: estatus + mensaje para el asociado. No se guarda
+             nada hasta presionar "Guardar seguimiento" (evita cambios accidentales
+             y deja claro con un mensaje si se guardó bien o falló). -->
+        <div class="historial-estatus-editor">
+          <label for="estatus-${r.folio}">Estatus:</label>
+          <select id="estatus-${r.folio}">
+            ${Object.keys(ESTATUS_CATALOGO).map(clave => `
+              <option value="${clave}" ${clave === (r.estatus || 'Enviado') ? 'selected' : ''}>${ESTATUS_CATALOGO[clave].etiqueta}</option>
+            `).join('')}
+          </select>
+        </div>
+        <div class="field" style="margin-top:8px;">
+          <label style="font-size:0.72rem; margin-bottom:4px;">Mensaje para el asociado (opcional, se ve en "Mis Reportes")</label>
+          <textarea id="comentario-${r.folio}" maxlength="240" placeholder="Ej. Ya estamos coordinando con la línea de transporte, en breve tendrás una respuesta.">${r.comentario_seguimiento || ''}</textarea>
+        </div>
+        <button type="button" class="btn-guardar-seguimiento" id="btn-guardar-${r.folio}" onclick="guardarSeguimientoReporte('${r.folio}')">💾 Guardar seguimiento</button>
+        <div class="seguimiento-estado" id="seguimiento-estado-${r.folio}"></div>
+      </div>
+    `;
+    }).join('');
+  }
+
+  // Guarda el estatus + el mensaje para el asociado, solo cuando el equipo de
+  // Transporte confirma con el botón (nada se guarda solo con cambiar el select).
+  // Muestra siempre una confirmación visible de éxito o error, en vez de fallar
+  // en silencio.
+  async function guardarSeguimientoReporte(folio) {
+    const boton = document.getElementById('btn-guardar-' + folio);
+    const estadoEl = document.getElementById('seguimiento-estado-' + folio);
+    const nuevoEstatus = document.getElementById('estatus-' + folio).value;
+    const nuevoComentario = document.getElementById('comentario-' + folio).value.trim();
+
+    if (!supabaseClient) {
+      estadoEl.textContent = '⚠️ Supabase no está configurado; no se puede guardar.';
+      estadoEl.className = 'seguimiento-estado error';
+      return;
+    }
+
+    boton.disabled = true;
+    const textoOriginal = boton.textContent;
+    boton.textContent = 'Guardando…';
+    estadoEl.textContent = '';
+    estadoEl.className = 'seguimiento-estado';
+
+    const { error } = await supabaseClient
+      .from(NOMBRE_TABLA)
+      .update({
+        estatus: nuevoEstatus,
+        comentario_seguimiento: nuevoComentario,
+        seguimiento_actualizado_en: new Date().toISOString(),
+      })
+      .eq('folio', folio);
+
+    boton.disabled = false;
+    boton.textContent = textoOriginal;
+
+    if (error) {
+      console.warn('No se pudo guardar el seguimiento:', error);
+      estadoEl.textContent = '❌ No se pudo guardar. Revisa tu conexión e intenta de nuevo.';
+      estadoEl.className = 'seguimiento-estado error';
+      return;
+    }
+
+    estadoEl.textContent = '✅ Seguimiento guardado. El asociado ya lo verá en "Mis Reportes".';
+    estadoEl.className = 'seguimiento-estado ok';
+
+    // Mantiene consistente la copia en memoria (para exportar CSV sin recargar)
+    const item = ultimosResultadosHistorial.find(r => r.folio === folio);
+    if (item) { item.estatus = nuevoEstatus; item.comentario_seguimiento = nuevoComentario; }
+  }
+
+  function descargarHistorialCSV() {
+    const resultados = ultimosResultadosHistorial;
+    if (!resultados.length) { alert('No hay reportes en el rango seleccionado.'); return; }
+
+    const encabezados = [
+      'Fecha', 'Hora', 'CEDIS', 'Almacén', 'Nombre', 'No. Empleado', 'Celular', 'Área', 'Turno',
+      'Unidad', 'Ruta', 'Tipo de Reporte', 'Situaciones', 'Descripción', 'Estatus',
+      'Mensaje al asociado', 'Folio'
+    ];
+    const filas = resultados.map(r => {
+      const cedisInfo = DIRECTORIO_CEDIS_ADMIN.find(c => c.slug === r.cedis_slug);
+      return [
+        r.fecha, r.hora, cedisInfo ? cedisInfo.nombre : (r.cedis_slug || 'Sin dato'), r.cedis,
+        r.nombre, r.num_empleado, r.celular, r.area, r.turno,
+        r.unidad, r.ruta, r.tipo_reporte, formatearSituaciones(r.situaciones), r.descripcion,
+        r.estatus || 'Enviado', r.comentario_seguimiento || '', r.folio || ''
+      ];
+    });
+
+    const escaparCSV = valor => `"${String(valor ?? '').replace(/"/g, '""')}"`;
+    const csv = [encabezados, ...filas].map(fila => fila.map(escaparCSV).join(',')).join('\n');
+
+    // El BOM inicial evita que Excel muestre mal los acentos y la "ñ" al abrir el CSV
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const enlace = document.createElement('a');
+    enlace.href = URL.createObjectURL(blob);
+    enlace.download = `reportes_transporte_${filtroHistorialActivo}_${formatearFechaLocal(new Date())}.csv`;
+    enlace.click();
+    URL.revokeObjectURL(enlace.href);
+  }
+
+  async function reintentarPendientesManual() {
+    const antes = obtenerPendientes().length;
+    if (!antes) { alert('No hay reportes pendientes por enviar. Todo está sincronizado. ✅'); return; }
+    await sincronizarPendientes();
+    const despues = obtenerPendientes().length;
+    const enviados = antes - despues;
+    alert(enviados
+      ? `Se sincronizaron ${enviados} reporte(s) pendiente(s). ${despues ? `Quedan ${despues} sin conexión todavía.` : ''}`
+      : 'No se pudo conectar con el servidor. Se reintentará más tarde.');
+  }
+
+  /* ════════════════════════════════
+     12. INICIALIZACIÓN
+  ════════════════════════════════ */
+  renderizarChipsSituacion();
+  renderizarChipsCedisReal();
+  aplicarFiltroRapido(document.querySelector('#chip-filtro-historial .chip[data-filtro="hoy"]'), 'hoy');
+
+  // Aviso claro de si Supabase está conectado, para no dar falsas expectativas
+  document.getElementById('historial-nota-central').textContent = supabaseClient
+    ? '✅ Historial compartido activo: los reportes de todos los asociados, desde cualquier dispositivo, se guardan y consultan aquí en tiempo real.'
+    : '⚠️ Supabase todavía no está configurado. Configura SUPABASE_URL y SUPABASE_ANON_KEY en el código para activar el historial compartido.';
+
+  // Al abrir el panel admin (con internet), intenta reenviar en silencio cualquier
+  // reporte que se haya quedado pendiente en este dispositivo por falta de conexión.
+  sincronizarPendientes();
+
+  /* ════════════════════════════════
+     13. GENERACIÓN DE QR POR CEDIS (Fase 5)
+     El QR ya no apunta a una URL fija: se arma con la URL base del sitio
+     (guardada en este navegador) + "/cedis/{slug}/" del CEDIS elegido.
+  ════════════════════════════════ */
+  function poblarSelectCedisQR() {
+    const select = document.getElementById('qr-select-cedis');
+    select.innerHTML = DIRECTORIO_CEDIS_ADMIN
+      .map(c => `<option value="${c.slug}">${c.nombre}</option>`)
+      .join('');
+  }
+
+  function construirURLCedis(urlBase, slug) {
+    const base = (urlBase || '').trim().replace(/\/+$/, ''); // sin "/" al final
+    return base + '/cedis/' + slug + '/';
+  }
+
+  // Redibuja el QR según el CEDIS y la URL base actuales. Usa clearInterval-style
+  // "limpiar y recrear" porque la librería qrcodejs no expone un método directo
+  // para cambiar solo el texto de un QR ya renderizado.
+  function regenerarQR() {
+    const slug = document.getElementById('qr-select-cedis').value;
+    const urlBase = document.getElementById('qr-url-base').value;
+    const url = construirURLCedis(urlBase, slug);
+
+    document.getElementById('qr-url-resultado').textContent = urlBase.trim()
+      ? '🔗 ' + url
+      : '⚠️ Escribe la URL base de tu sitio arriba para generar el QR correcto.';
+
+    const contenedor = document.getElementById('qr-code');
+    contenedor.innerHTML = '';
+    new QRCode(contenedor, {
+      text: url,
+      width: 200,
+      height: 200,
+      colorDark:  '#0071CE',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
+
+  function guardarURLBaseYRegenerar() {
+    const urlBase = document.getElementById('qr-url-base').value;
+    try { localStorage.setItem(CLAVE_URL_BASE_QR, urlBase); }
+    catch (e) { console.warn('No se pudo guardar la URL base:', e); }
+    regenerarQR();
+  }
+
+  function inicializarGeneradorQR() {
+    poblarSelectCedisQR();
+    let urlBaseGuardada = '';
+    try { urlBaseGuardada = localStorage.getItem(CLAVE_URL_BASE_QR) || ''; }
+    catch (e) { /* sin acceso a localStorage; se queda vacío */ }
+    document.getElementById('qr-url-base').value = urlBaseGuardada;
+    regenerarQR();
+  }
+
+  // Descarga el QR actual como PNG. La librería qrcodejs dibuja en un <canvas>
+  // en navegadores modernos; si no lo encuentra (fallback muy antiguo con <img>),
+  // avisa en vez de fallar en silencio.
+  function descargarQR() {
+    const canvas = document.querySelector('#qr-code canvas');
+    if (!canvas) { alert('No se pudo generar el archivo. Intenta con otro navegador.'); return; }
+    const slug = document.getElementById('qr-select-cedis').value;
+    const enlace = document.createElement('a');
+    enlace.href = canvas.toDataURL('image/png');
+    enlace.download = `qr-transporte-${slug}.png`;
+    enlace.click();
+  }
+
+  /* ════════════════════════════════
+     14. DIRECTORIO DE ASOCIADOS (Fase 6)
+     Requiere las columnas cedis_slug y activo en la tabla `asociados`
+     (ver propuesta de esquema en ARQUITECTURA.md). Si Supabase no está
+     configurado, esta sección lo avisa en vez de fallar en silencio.
+  ════════════════════════════════ */
+  let ultimosAsociadosCargados = [];
+
+  function poblarSelectsCedisAsociados() {
+    const opciones = DIRECTORIO_CEDIS_ADMIN.map(c => `<option value="${c.slug}">${c.nombre}</option>`).join('');
+    document.getElementById('asociado-form-cedis').innerHTML = opciones;
+    document.getElementById('asociados-filtro-cedis').innerHTML =
+      '<option value="todos">Todos los CEDIS</option>' + opciones;
+  }
+
+  function limpiarFormularioAsociado() {
+    document.getElementById('asociado-form-original-numero').value = '';
+    document.getElementById('asociado-form-numero').value = '';
+    document.getElementById('asociado-form-nombre').value = '';
+    document.getElementById('asociado-form-area').value = '';
+    document.getElementById('asociado-form-celular').value = '';
+    document.getElementById('asociado-form-cedis').value = DIRECTORIO_CEDIS_ADMIN[0].slug;
+    document.getElementById('asociado-form-activo').checked = true;
+    document.getElementById('asociado-form-numero').disabled = false;
+    document.getElementById('asociado-form-estado').textContent = '';
+    document.getElementById('asociado-form-estado').className = 'seguimiento-estado';
+  }
+
+  function cargarAsociadoEnFormulario(a) {
+    document.getElementById('asociado-form-original-numero').value = a.numero_asociado;
+    document.getElementById('asociado-form-numero').value = a.numero_asociado;
+    document.getElementById('asociado-form-numero').disabled = true; // no se cambia el número en edición
+    document.getElementById('asociado-form-nombre').value = a.nombre || '';
+    document.getElementById('asociado-form-area').value = a.area || '';
+    document.getElementById('asociado-form-celular').value = a.celular || '';
+    document.getElementById('asociado-form-cedis').value = a.cedis_slug || DIRECTORIO_CEDIS_ADMIN[0].slug;
+    document.getElementById('asociado-form-activo').checked = a.activo !== false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Busca en la última lista cargada (evita incrustar JSON dentro de atributos
+  // onclick, que se rompe si un nombre trae comillas).
+  function editarAsociadoPorNumero(numero) {
+    const a = ultimosAsociadosCargados.find(x => String(x.numero_asociado) === String(numero));
+    if (a) cargarAsociadoEnFormulario(a);
+  }
+
+  async function guardarAsociadoDesdeAdmin() {
+    const estadoEl = document.getElementById('asociado-form-estado');
+    const boton = document.getElementById('btn-guardar-asociado');
+
+    if (!supabaseClient) {
+      estadoEl.textContent = '⚠️ Supabase no está configurado; no se puede guardar.';
+      estadoEl.className = 'seguimiento-estado error';
+      return;
+    }
+
+    const numeroOriginal = document.getElementById('asociado-form-original-numero').value.trim();
+    const numero = document.getElementById('asociado-form-numero').value.trim();
+    const nombre = document.getElementById('asociado-form-nombre').value.trim();
+    if (!numero || !nombre) {
+      estadoEl.textContent = '⚠️ No. de empleado y nombre son obligatorios.';
+      estadoEl.className = 'seguimiento-estado error';
+      return;
+    }
+
+    const datos = {
+      numero_asociado: numero,
+      nombre,
+      area: document.getElementById('asociado-form-area').value.trim(),
+      celular: document.getElementById('asociado-form-celular').value.trim(),
+      cedis_slug: document.getElementById('asociado-form-cedis').value,
+      activo: document.getElementById('asociado-form-activo').checked,
+    };
+
+    boton.disabled = true;
+    const textoOriginal = boton.textContent;
+    boton.textContent = 'Guardando…';
+
+    const { error } = await supabaseClient
+      .from(NOMBRE_TABLA_ASOCIADOS)
+      .upsert(datos, { onConflict: 'numero_asociado' });
+
+    boton.disabled = false;
+    boton.textContent = textoOriginal;
+
+    if (error) {
+      console.warn('No se pudo guardar el asociado:', error);
+      estadoEl.textContent = '❌ No se pudo guardar. Revisa tu conexión e intenta de nuevo.';
+      estadoEl.className = 'seguimiento-estado error';
+      return;
+    }
+
+    estadoEl.textContent = numeroOriginal ? '✅ Asociado actualizado.' : '✅ Asociado creado.';
+    estadoEl.className = 'seguimiento-estado ok';
+    limpiarFormularioAsociado();
+    renderizarAsociados();
+  }
+
+  async function alternarActivoAsociado(numero, activoActual) {
+    if (!supabaseClient) return;
+    const { error } = await supabaseClient
+      .from(NOMBRE_TABLA_ASOCIADOS)
+      .update({ activo: !activoActual })
+      .eq('numero_asociado', numero);
+    if (error) {
+      console.warn('No se pudo cambiar el estado del asociado:', error);
+      alert('No se pudo cambiar el estado. Revisa tu conexión e intenta de nuevo.');
+      return;
+    }
+    renderizarAsociados();
+  }
+
+  async function renderizarAsociados() {
+    const cont = document.getElementById('asociados-lista');
+    const resumen = document.getElementById('asociados-resumen');
+
+    if (!supabaseClient) {
+      cont.innerHTML = '<div class="historial-vacio">Supabase todavía no está configurado.</div>';
+      resumen.textContent = '0 asociados encontrados';
+      return;
+    }
+
+    cont.innerHTML = '<div class="historial-vacio">Cargando…</div>';
+
+    const { data, error } = await supabaseClient
+      .from(NOMBRE_TABLA_ASOCIADOS)
+      .select('numero_asociado, nombre, area, celular, cedis_slug, activo')
+      .order('nombre', { ascending: true });
+
+    if (error) {
+      // Si las columnas cedis_slug/activo todavía no existen (esquema de Fase 6
+      // no aplicado), Supabase regresa error aquí en vez de una lista vacía.
+      console.warn('No se pudo consultar el directorio de asociados:', error);
+      cont.innerHTML = '<div class="historial-vacio">No se pudo cargar el directorio. ' +
+        '¿Ya aplicaste el esquema de la Fase 6 (columnas cedis_slug y activo en `asociados`)?</div>';
+      resumen.textContent = '0 asociados encontrados';
+      return;
+    }
+
+    ultimosAsociadosCargados = data || [];
+
+    const filtroCedis = document.getElementById('asociados-filtro-cedis').value;
+    const filtroEstado = document.getElementById('asociados-filtro-estado').value;
+    const busqueda = document.getElementById('asociados-buscar').value.trim().toLowerCase();
+
+    const filtrados = ultimosAsociadosCargados.filter(a => {
+      if (filtroCedis !== 'todos' && a.cedis_slug !== filtroCedis) return false;
+      if (filtroEstado === 'activos' && a.activo === false) return false;
+      if (filtroEstado === 'inactivos' && a.activo !== false) return false;
+      if (busqueda) {
+        const enNumero = (a.numero_asociado || '').toLowerCase().includes(busqueda);
+        const enNombre = (a.nombre || '').toLowerCase().includes(busqueda);
+        if (!enNumero && !enNombre) return false;
+      }
+      return true;
+    });
+
+    resumen.textContent = `${filtrados.length} asociado${filtrados.length === 1 ? '' : 's'} encontrado${filtrados.length === 1 ? '' : 's'}`;
+
+    if (!filtrados.length) {
+      cont.innerHTML = '<div class="historial-vacio">Sin asociados para este filtro.</div>';
+      return;
+    }
+
+    cont.innerHTML = filtrados.map(a => {
+      const cedisInfo = DIRECTORIO_CEDIS_ADMIN.find(c => c.slug === a.cedis_slug);
+      const activo = a.activo !== false;
+      return `
+        <div class="historial-item">
+          <div class="historial-top">
+            <span>${a.nombre} — No. ${a.numero_asociado}</span>
+            <span class="badge-estatus" style="background:${activo ? '#16a34a22' : '#64748b22'}; color:${activo ? '#16a34a' : '#64748b'};">
+              ${activo ? '✅ Activo' : '⛔ Inactivo'}
+            </span>
+          </div>
+          <div class="historial-desc">${a.area || 'Sin área'} · ${a.celular || 'Sin celular'} · ${cedisInfo ? cedisInfo.nombre : (a.cedis_slug || 'Sin CEDIS')}</div>
+          <div class="historial-estatus-editor" style="border-top:none; padding-top:8px;">
+            <button type="button" class="btn-guardar-seguimiento" style="margin-top:0;"
+              onclick="editarAsociadoPorNumero('${a.numero_asociado}')">✏️ Editar</button>
+            <button type="button" class="btn-guardar-seguimiento" style="margin-top:0; background:${activo ? 'var(--error)' : '#16a34a'};"
+              onclick="alternarActivoAsociado('${a.numero_asociado}', ${activo})">${activo ? '⛔ Desactivar' : '✅ Activar'}</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Parser de CSV mínimo: soporta comas dentro de campos entre comillas dobles.
+  // Suficiente para el formato simple que pedimos (sin saltos de línea dentro
+  // de un campo). Si tu CSV es más complejo, expórtalo desde Excel/Sheets con
+  // este formato básico.
+  function parsearCSV(texto) {
+    const lineas = texto.split(/\r?\n/).filter(l => l.trim().length > 0);
+    if (!lineas.length) return [];
+    const partirLinea = linea => {
+      const campos = [];
+      let actual = '', dentroComillas = false;
+      for (let i = 0; i < linea.length; i++) {
+        const c = linea[i];
+        if (c === '"') { dentroComillas = !dentroComillas; continue; }
+        if (c === ',' && !dentroComillas) { campos.push(actual); actual = ''; continue; }
+        actual += c;
+      }
+      campos.push(actual);
+      return campos.map(c => c.trim());
+    };
+    const encabezados = partirLinea(lineas[0]).map(h => h.toLowerCase());
+    return lineas.slice(1).map(linea => {
+      const valores = partirLinea(linea);
+      const fila = {};
+      encabezados.forEach((h, i) => fila[h] = valores[i] || '');
+      return fila;
+    });
+  }
+
+  async function importarAsociadosCSV(evento) {
+    const archivo = evento.target.files[0];
+    const estadoEl = document.getElementById('asociados-importar-estado');
+    if (!archivo) return;
+
+    if (!supabaseClient) {
+      estadoEl.textContent = '⚠️ Supabase no está configurado; no se puede importar.';
+      estadoEl.className = 'seguimiento-estado error';
+      return;
+    }
+
+    estadoEl.textContent = 'Leyendo archivo…';
+    estadoEl.className = 'seguimiento-estado';
+
+    const texto = await archivo.text();
+    const filas = parsearCSV(texto);
+
+    if (!filas.length) {
+      estadoEl.textContent = '⚠️ El archivo no tiene filas de datos.';
+      estadoEl.className = 'seguimiento-estado error';
+      evento.target.value = '';
+      return;
+    }
+
+    const cedisPorDefecto = DIRECTORIO_CEDIS_ADMIN[0].slug;
+    const registros = filas
+      .filter(f => f.numero_asociado && f.nombre)
+      .map(f => ({
+        numero_asociado: f.numero_asociado,
+        nombre: f.nombre,
+        area: f.area || '',
+        celular: f.celular || '',
+        cedis_slug: f.cedis_slug || cedisPorDefecto,
+        activo: true,
+      }));
+
+    if (!registros.length) {
+      estadoEl.textContent = '⚠️ Ninguna fila tiene numero_asociado y nombre. Revisa los encabezados del CSV.';
+      estadoEl.className = 'seguimiento-estado error';
+      evento.target.value = '';
+      return;
+    }
+
+    estadoEl.textContent = `Importando ${registros.length} asociado(s)…`;
+
+    const { error } = await supabaseClient
+      .from(NOMBRE_TABLA_ASOCIADOS)
+      .upsert(registros, { onConflict: 'numero_asociado' });
+
+    evento.target.value = ''; // permite volver a subir el mismo archivo si hace falta
+
+    if (error) {
+      console.warn('No se pudo importar el CSV de asociados:', error);
+      estadoEl.textContent = '❌ No se pudo importar. Revisa tu conexión e intenta de nuevo.';
+      estadoEl.className = 'seguimiento-estado error';
+      return;
+    }
+
+    estadoEl.textContent = `✅ Se importaron/actualizaron ${registros.length} asociado(s).`;
+    estadoEl.className = 'seguimiento-estado ok';
+    renderizarAsociados();
+  }
+
+  /* ════════════════════════════════
+     15. RUTAS Y PARADAS (Fase 8)
+     Requiere las tablas `rutas` y `paradas` (ver esquema en ARQUITECTURA.md).
+  ════════════════════════════════ */
+  function poblarSelectsRutas() {
+    const selectCedis = document.getElementById('rutas-select-cedis');
+    selectCedis.innerHTML = DIRECTORIO_CEDIS_ADMIN.map(c => `<option value="${c.slug}">${c.nombre}</option>`).join('');
+    poblarSelectAlmacenPorCedis(selectCedis.value);
+  }
+
+  function poblarSelectAlmacenPorCedis(cedisSlug) {
+    const cedis = DIRECTORIO_CEDIS_ADMIN.find(c => c.slug === cedisSlug) || DIRECTORIO_CEDIS_ADMIN[0];
+    document.getElementById('rutas-select-almacen').innerHTML =
+      cedis.almacenes.map(a => `<option value="${a.slug}">${a.nombre}</option>`).join('');
+  }
+
+  function cambiarCedisEnRutas() {
+    poblarSelectAlmacenPorCedis(document.getElementById('rutas-select-cedis').value);
+    renderizarRutas();
+  }
+
+  async function crearRuta() {
+    const estadoEl = document.getElementById('rutas-estado-general');
+    const input = document.getElementById('rutas-nueva-nombre');
+    const nombre = input.value.trim();
+    if (!nombre) return;
+
+    if (!supabaseClient) {
+      estadoEl.textContent = '⚠️ Supabase no está configurado; no se puede guardar.';
+      estadoEl.className = 'seguimiento-estado error';
+      return;
+    }
+
+    const cedisSlug = document.getElementById('rutas-select-cedis').value;
+    const almacenSlug = document.getElementById('rutas-select-almacen').value;
+
+    // El orden de la nueva ruta va al final de las que ya existen para este
+    // CEDIS + almacén.
+    const ordenSiguiente = ultimasRutasCargadas.length
+      ? Math.max(...ultimasRutasCargadas.map(r => r.orden || 0)) + 1
+      : 0;
+
+    const { error } = await supabaseClient.from(NOMBRE_TABLA_RUTAS).insert([{
+      cedis_slug: cedisSlug,
+      almacen_slug: almacenSlug,
+      nombre,
+      orden: ordenSiguiente,
+      activo: true,
+    }]);
+
+    if (error) {
+      console.warn('No se pudo crear la ruta:', error);
+      estadoEl.textContent = '❌ No se pudo crear la ruta. ¿Ya aplicaste el esquema de la Fase 8?';
+      estadoEl.className = 'seguimiento-estado error';
+      return;
+    }
+
+    input.value = '';
+    estadoEl.textContent = '✅ Ruta creada.';
+    estadoEl.className = 'seguimiento-estado ok';
+    renderizarRutas();
+  }
+
+  async function guardarNombreRuta(rutaId) {
+    const input = document.getElementById('ruta-nombre-' + rutaId);
+    const nombre = input.value.trim();
+    if (!nombre || !supabaseClient) return;
+    const { error } = await supabaseClient.from(NOMBRE_TABLA_RUTAS).update({ nombre }).eq('id', rutaId);
+    if (error) { console.warn('No se pudo renombrar la ruta:', error); alert('No se pudo guardar el nombre.'); return; }
+    renderizarRutas();
+  }
+
+  async function alternarActivoRuta(rutaId, activoActual) {
+    if (!supabaseClient) return;
+    const { error } = await supabaseClient.from(NOMBRE_TABLA_RUTAS).update({ activo: !activoActual }).eq('id', rutaId);
+    if (error) { console.warn('No se pudo cambiar el estado de la ruta:', error); alert('No se pudo cambiar el estado.'); return; }
+    renderizarRutas();
+  }
+
+  async function eliminarRuta(rutaId) {
+    if (!supabaseClient) return;
+    if (!confirm('¿Eliminar esta ruta y todas sus paradas? Esta acción no se puede deshacer.')) return;
+    const { error } = await supabaseClient.from(NOMBRE_TABLA_RUTAS).delete().eq('id', rutaId);
+    if (error) { console.warn('No se pudo eliminar la ruta:', error); alert('No se pudo eliminar la ruta.'); return; }
+    renderizarRutas();
+  }
+
+  async function agregarParada(rutaId) {
+    const input = document.getElementById('ruta-nueva-parada-' + rutaId);
+    const nombre = input.value.trim();
+    if (!nombre || !supabaseClient) return;
+
+    const ruta = ultimasRutasCargadas.find(r => r.id === rutaId);
+    const paradasActuales = (ruta && ruta[NOMBRE_TABLA_PARADAS]) || [];
+    const ordenSiguiente = paradasActuales.length
+      ? Math.max(...paradasActuales.map(p => p.orden || 0)) + 1
+      : 0;
+
+    const { error } = await supabaseClient.from(NOMBRE_TABLA_PARADAS).insert([{
+      ruta_id: rutaId, nombre, orden: ordenSiguiente, activo: true,
+    }]);
+    if (error) { console.warn('No se pudo agregar la parada:', error); alert('No se pudo agregar la parada.'); return; }
+    renderizarRutas();
+  }
+
+  async function eliminarParada(paradaId) {
+    if (!supabaseClient) return;
+    const { error } = await supabaseClient.from(NOMBRE_TABLA_PARADAS).delete().eq('id', paradaId);
+    if (error) { console.warn('No se pudo eliminar la parada:', error); alert('No se pudo eliminar la parada.'); return; }
+    renderizarRutas();
+  }
+
+  let ultimasRutasCargadas = [];
+
+  async function renderizarRutas() {
+    const cont = document.getElementById('rutas-lista');
+
+    if (!supabaseClient) {
+      cont.innerHTML = '<div class="historial-vacio">Supabase todavía no está configurado.</div>';
+      return;
+    }
+
+    cont.innerHTML = '<div class="historial-vacio">Cargando…</div>';
+
+    const cedisSlug = document.getElementById('rutas-select-cedis').value;
+    const almacenSlug = document.getElementById('rutas-select-almacen').value;
+
+    const { data, error } = await supabaseClient
+      .from(NOMBRE_TABLA_RUTAS)
+      .select('id, nombre, orden, activo, ' + NOMBRE_TABLA_PARADAS + '(id, nombre, orden, activo)')
+      .eq('cedis_slug', cedisSlug)
+      .eq('almacen_slug', almacenSlug)
+      .order('orden', { ascending: true });
+
+    if (error) {
+      console.warn('No se pudo consultar rutas/paradas:', error);
+      cont.innerHTML = '<div class="historial-vacio">No se pudo cargar. ' +
+        '¿Ya aplicaste el esquema de la Fase 8 (tablas `rutas` y `paradas`)?</div>';
+      return;
+    }
+
+    ultimasRutasCargadas = data || [];
+
+    if (!ultimasRutasCargadas.length) {
+      cont.innerHTML = '<div class="historial-vacio">Sin rutas para este CEDIS/almacén todavía. Agrega la primera arriba.</div>';
+      return;
+    }
+
+    cont.innerHTML = ultimasRutasCargadas.map(r => {
+      const paradas = (r[NOMBRE_TABLA_PARADAS] || []).slice().sort((a, b) => (a.orden || 0) - (b.orden || 0));
+      const activa = r.activo !== false;
+      return `
+        <div class="card">
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+            <input type="text" id="ruta-nombre-${r.id}" value="${r.nombre}" style="flex:1; font-weight:700;">
+            <button type="button" class="btn-guardar-seguimiento" style="margin-top:0; width:auto; padding:9px 12px;"
+              onclick="guardarNombreRuta('${r.id}')" title="Guardar nombre">💾</button>
+            <button type="button" class="btn-guardar-seguimiento" style="margin-top:0; width:auto; padding:9px 12px; background:${activa ? 'var(--error)' : '#16a34a'};"
+              onclick="alternarActivoRuta('${r.id}', ${activa})" title="${activa ? 'Desactivar' : 'Activar'}">${activa ? '⛔' : '✅'}</button>
+            <button type="button" class="btn-guardar-seguimiento" style="margin-top:0; width:auto; padding:9px 12px; background:var(--muted);"
+              onclick="eliminarRuta('${r.id}')" title="Eliminar ruta">🗑️</button>
+          </div>
+          ${!activa ? '<div class="historial-nota" style="margin:-4px 0 10px; color:var(--error);">⛔ Ruta inactiva — no aparece en el formulario del asociado.</div>' : ''}
+          <div class="historial-tags">
+            ${paradas.length ? paradas.map(p => `
+              <span class="historial-tag" style="display:inline-flex; align-items:center; gap:5px;">
+                ${p.nombre}
+                <span style="cursor:pointer; font-weight:900;" onclick="eliminarParada('${p.id}')" title="Eliminar parada">✕</span>
+              </span>
+            `).join('') : '<span class="historial-desc">Sin paradas todavía.</span>'}
+          </div>
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <input type="text" id="ruta-nueva-parada-${r.id}" placeholder="Nueva parada"
+              onkeydown="if(event.key==='Enter'){ event.preventDefault(); agregarParada('${r.id}'); }" style="flex:1;">
+            <button type="button" class="btn-guardar-seguimiento" style="margin-top:0; width:auto; padding:9px 14px;"
+              onclick="agregarParada('${r.id}')">➕</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  poblarSelectsCedisAsociados();
+  poblarSelectsRutas();
+
+  inicializarGeneradorQR();
+</script>
+</body>
+</html>
