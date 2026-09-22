@@ -1228,23 +1228,40 @@
      Todo lo que en el futuro vendrá de un backend real vive aislado aquí,
      para que sustituirlo por llamadas reales sea un cambio de una sola pieza.
   ════════════════════════════════ */
-  /*
-    NOTA (Fase 3 — modularización): esta app sirve un solo CEDIS (Villahermosa),
-    así que su configuración todavía vive escrita a mano aquí. Su forma es
-    intencional: es exactamente la que tendría la fila de `cedis` + sus
-    `almacenes` relacionados si vinieran de Supabase (ver propuesta de esquema
-    en ARQUITECTURA.md). El día que exista esa tabla, DIRECTORIO_CEDIS se
-    reemplaza por el resultado de una consulta — el resto del código ya lee de
-    aquí, no de constantes sueltas.
+  // ── Conexión a Supabase ──────────────────────────────────────────────
+  // Reemplaza estos dos valores con los de TU proyecto de Supabase:
+  //   Panel de Supabase → Project Settings → API
+  //     - "Project URL"      → SUPABASE_URL
+  //     - "anon public" key  → SUPABASE_ANON_KEY
+  // La anon key es pública por diseño (viaja en el navegador de todos los asociados);
+  // la seguridad real la dan las políticas de Row Level Security (RLS) definidas
+  // en la tabla, no el secreto de esta llave. Ver el script SQL entregado aparte.
+  //
+  // NOTA (Fase 3 — cierre): esta conexión se movió arriba de lo que antes era
+  // su lugar porque ahora el directorio de CEDIS (más abajo) también la
+  // necesita, para refrescarse en segundo plano desde la tabla `cedis`.
+  const SUPABASE_URL      = 'https://dxixxpyfpenubyefztvz.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4aXh4cHlmcGVudWJ5ZWZ6dHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwMDk1OTEsImV4cCI6MjEwNDU4NTU5MX0.BgbFPeXqmxlmNm1ADr9qw9W92wFk_cPfPEMyYwqVCJ4';
+  const NOMBRE_TABLA           = 'reportes_transporte';
+  const NOMBRE_TABLA_ASOCIADOS = 'asociados';
+  const NOMBRE_TABLA_RUTAS     = 'rutas';   // Fase 8
+  const NOMBRE_TABLA_PARADAS   = 'paradas'; // Fase 8
+  const NOMBRE_TABLA_CEDIS      = 'cedis';      // Fase 3
+  const NOMBRE_TABLA_ALMACENES  = 'almacenes';  // Fase 3
 
-    NOTA (Fase 4 — URL por CEDIS): se indexa por "slug" porque ese es el valor
-    que se lee de la URL (/cedis/{slug}/) para decidir qué configuración
-    cargar. Ver resolverCedisDesdeURL() más abajo. Esto es solo conveniencia
-    de navegación (evita que el asociado tenga que elegir su CEDIS a mano) —
-    NO es una frontera de seguridad: el aislamiento real de datos entre CEDIS
-    depende de `cedis_id` en cada reporte (Fase 7) + RLS en Supabase (Fase 10).
+  const supabaseClient = (SUPABASE_URL.includes('TU-PROYECTO'))
+    ? null // todavía no configurado: la app sigue funcionando, solo sin historial compartido
+    : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /*
+    NOTA (Fase 3 — cierre): DIRECTORIO_CEDIS_FALLBACK es exactamente lo que
+    antes se llamaba DIRECTORIO_CEDIS — el objeto escrito a mano. Ya no es la
+    fuente principal: ahora es el respaldo de última instancia (Supabase caído,
+    tabla `cedis` sin crear todavía, o el primer uso de la app en un
+    dispositivo nuevo sin caché). El resto del código sigue leyendo de
+    DIRECTORIO_CEDIS (sin sufijo) — ver cómo se resuelve más abajo.
   */
-  const DIRECTORIO_CEDIS = {
+  const DIRECTORIO_CEDIS_FALLBACK = {
     villahermosa: {
       nombre: 'CEDIS Walmart Villahermosa',
       codigo: 'VSA',
@@ -1271,18 +1288,85 @@
         },
       },
     },
-    // Cuando exista un segundo CEDIS real, se agrega aquí una entrada más con
-    // su propio slug — nunca se inventa uno sin confirmación explícita.
+    // Cuando exista un segundo CEDIS real en la tabla `cedis`, no hace falta
+    // tocar este objeto — aparece solo en cuanto Supabase responda. Esta
+    // entrada de respaldo solo importa para el primer uso sin caché.
   };
+
+  const CLAVE_CACHE_DIRECTORIO_CEDIS = 'wm_transporte_directorio_cedis_cache_v1';
+
+  function obtenerDirectorioCedisCacheado() {
+    try { return JSON.parse(localStorage.getItem(CLAVE_CACHE_DIRECTORIO_CEDIS)); }
+    catch (e) { return null; }
+  }
+
+  function guardarDirectorioCedisEnCache(directorio) {
+    try { localStorage.setItem(CLAVE_CACHE_DIRECTORIO_CEDIS, JSON.stringify(directorio)); }
+    catch (e) { console.warn('No se pudo cachear el directorio de CEDIS:', e); }
+  }
+
+  // Construye el directorio (misma forma que DIRECTORIO_CEDIS_FALLBACK) a
+  // partir de las tablas `cedis` + `almacenes` de Supabase. Las paradas no
+  // viajan aquí — esas ya se resuelven aparte, por rutas (Fase 8).
+  async function consultarDirectorioCedisDesdeSupabase() {
+    if (!supabaseClient) return null;
+    try {
+      const { data, error } = await supabaseClient
+        .from(NOMBRE_TABLA_CEDIS)
+        .select('slug, nombre, codigo, ciudad, ' + NOMBRE_TABLA_ALMACENES + '(slug, nombre, whatsapp, activo)')
+        .eq('activo', true);
+
+      if (error) {
+        // Lo más probable: la tabla `cedis` todavía no existe (Fase 3 no
+        // aplicada en Supabase todavía). No es un error del usuario.
+        console.warn('No se pudo consultar la tabla cedis (¿ya aplicaste el esquema de la Fase 3?):', error);
+        return null;
+      }
+      if (!data || !data.length) return null;
+
+      const directorio = {};
+      data.forEach(c => {
+        const almacenes = {};
+        (c[NOMBRE_TABLA_ALMACENES] || []).filter(a => a.activo !== false).forEach(a => {
+          almacenes[a.slug] = { nombre: a.nombre, whatsapp: a.whatsapp, paradas: [] };
+        });
+        directorio[c.slug] = { nombre: c.nombre, codigo: c.codigo, ciudad: c.ciudad, slug: c.slug, almacenes };
+      });
+      return directorio;
+    } catch (e) {
+      console.warn('Sin conexión al consultar el directorio de CEDIS:', e);
+      return null;
+    }
+  }
+
+  /*
+    NOTA (Fase 3 — cierre): esto es lo que hace que la app use "configuración
+    dinámica" de verdad, sin arriesgar nada de lo que ya funciona. DIRECTORIO_CEDIS
+    se resuelve de forma SÍNCRONA, igual que siempre, así que resolverCedisDesdeURL()
+    (Fase 4) sigue funcionando instantáneo, sin pantallas de carga:
+
+      1) Si hay una copia en caché (de una visita anterior a esta app), se usa
+         de inmediato — tan rápido como el respaldo fijo.
+      2) Si no hay caché (primer uso en este dispositivo, o nunca hubo
+         conexión), se usa DIRECTORIO_CEDIS_FALLBACK.
+
+    En paralelo, sin bloquear nada de lo anterior, se dispara una consulta a
+    Supabase para refrescar la caché. La sesión actual nunca cambia a media
+    carga — la próxima vez que se abra la app, ya ve los CEDIS actualizados.
+  */
+  const DIRECTORIO_CEDIS = obtenerDirectorioCedisCacheado() || DIRECTORIO_CEDIS_FALLBACK;
+
+  consultarDirectorioCedisDesdeSupabase().then(directorio => {
+    if (directorio) guardarDirectorioCedisEnCache(directorio);
+  });
 
   const CEDIS_POR_DEFECTO = 'villahermosa'; // usado si la URL no trae /cedis/{slug}/
 
   // Lee la URL actual y decide qué CEDIS mostrar. Si la ruta incluye
   // "/cedis/{slug}/" se usa ese slug; si no lo trae (ej. se entró por /app/
-  // directamente, o durante la transición desde la Fase 3), se usa el CEDIS
-  // piloto por defecto. Si el slug viene en la URL pero no existe en el
-  // directorio, se marca como "no encontrado" para mostrar un error claro en
-  // vez de cargar silenciosamente el CEDIS equivocado.
+  // directamente), se usa el CEDIS piloto por defecto. Si el slug viene en la
+  // URL pero no existe en el directorio, se marca como "no encontrado" para
+  // mostrar un error claro en vez de cargar silenciosamente el CEDIS equivocado.
   function resolverCedisDesdeURL() {
     const match = window.location.pathname.match(/\/cedis\/([a-z0-9-]+)\/?/i);
     if (!match) return { config: DIRECTORIO_CEDIS[CEDIS_POR_DEFECTO], encontrado: true, slugBuscado: null };
@@ -1296,25 +1380,6 @@
 
   const RESULTADO_CEDIS = resolverCedisDesdeURL();
   const CONFIG_CEDIS = RESULTADO_CEDIS.config || DIRECTORIO_CEDIS[CEDIS_POR_DEFECTO];
-
-  // ── Conexión a Supabase ──────────────────────────────────────────────
-  // Reemplaza estos dos valores con los de TU proyecto de Supabase:
-  //   Panel de Supabase → Project Settings → API
-  //     - "Project URL"      → SUPABASE_URL
-  //     - "anon public" key  → SUPABASE_ANON_KEY
-  // La anon key es pública por diseño (viaja en el navegador de todos los asociados);
-  // la seguridad real la dan las políticas de Row Level Security (RLS) definidas
-  // en la tabla, no el secreto de esta llave. Ver el script SQL entregado aparte.
-  const SUPABASE_URL      = 'https://dxixxpyfpenubyefztvz.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4aXh4cHlmcGVudWJ5ZWZ6dHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwMDk1OTEsImV4cCI6MjEwNDU4NTU5MX0.BgbFPeXqmxlmNm1ADr9qw9W92wFk_cPfPEMyYwqVCJ4';
-  const NOMBRE_TABLA           = 'reportes_transporte';
-  const NOMBRE_TABLA_ASOCIADOS = 'asociados';
-  const NOMBRE_TABLA_RUTAS     = 'rutas';   // Fase 8
-  const NOMBRE_TABLA_PARADAS   = 'paradas'; // Fase 8
-
-  const supabaseClient = (SUPABASE_URL.includes('TU-PROYECTO'))
-    ? null // todavía no configurado: la app sigue funcionando, solo sin historial compartido
-    : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // ── Base de datos real de asociados (tabla `asociados` en Supabase) ────────────
   // NUMERO DE ASOCIADO, NOMBRE y AREA se precargan desde el script SQL entregado

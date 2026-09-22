@@ -295,12 +295,51 @@ pantalla nueva de administración.
   activar-desactivar/eliminar rutas, y agregar/quitar paradas dentro de cada
   una. Eliminar una ruta borra sus paradas en cascada (con confirmación).
 
-## Siguiente paso natural (Fase 3 — cierre)
+## Fase 3 — Cierre (implementada)
 
-Con rutas, paradas, asociados y reportes ya usando `cedis_slug`/`almacen_slug`
-como texto libre en cuatro lugares distintos, seguir posponiendo el SQL de la
-Fase 3 (tabla `cedis` real) empieza a tener un costo de mantenimiento visible.
-Es el pendiente más antiguo del proyecto — buen momento para cerrarlo antes de
-sumar la Fase 9 (mover más funciones de administración) o la Fase 10
-(seguridad real).
+Se consolidó todo el SQL pendiente de las Fases 3, 6, 7 y 8 en un solo script:
+**`fase3-cierre.sql`**, en la raíz de este paquete. Es seguro de correr aunque
+ya hayas aplicado partes sueltas antes (usa `IF NOT EXISTS` / `ON CONFLICT DO
+NOTHING`, y las llaves foráneas están envueltas para ignorar el error si ya
+existen). Crea `cedis`, `almacenes`, agrega las columnas de `asociados` y
+`reportes_transporte` con sus FK reales a `cedis`, y crea `rutas`/`paradas` ya
+enlazadas desde el inicio. Incluye un bloque opcional de migración que mete
+tus paradas actuales bajo una "Ruta general" por almacén (bórralo si prefieres
+empezar de cero).
+
+### El cambio de código: configuración dinámica de verdad
+
+Tanto `asociado.html` como `admin.html` tenían un objeto `DIRECTORIO_CEDIS`
+escrito a mano. Ahora ambos:
+
+1. Se resuelven **de forma síncrona** (como siempre) leyendo primero una
+   copia en `localStorage` de una visita anterior, o el objeto fijo original
+   (ahora renombrado `..._FALLBACK`) si no hay caché — así el flujo de la
+   Fase 4 (URL → CEDIS) sigue siendo instantáneo, sin pantallas de carga.
+2. En paralelo, sin bloquear nada, disparan una consulta a la tabla `cedis`
+   de Supabase. Si responde, actualiza la caché para la **próxima** carga.
+
+**Esto significa que agregar un CEDIS nuevo ya no requiere tocar código**: se
+inserta en la tabla `cedis` (+ sus `almacenes`), y aparece solo la siguiente
+vez que alguien abra la app o el panel admin — en ambos.
+
+**Decisión de diseño explícita:** se mantiene `slug` (texto) como identificador
+en todas las relaciones (`asociados.cedis_slug`, `reportes_transporte.cedis_slug`,
+`rutas.cedis_slug`) en vez de migrar a `cedis.id` (uuid). No es un atajo — es
+la elección correcta para esta app: las URLs (Fase 4), el QR (Fase 5) y todos
+los directorios en memoria ya usan `slug` como llave natural y legible; forzar
+un `uuid` interno ahí solo agregaría una traducción extra en cada capa sin
+beneficio real. `cedis.slug` es `UNIQUE`, así que las llaves foráneas son
+igual de válidas que si apuntaran al `id`.
+
+## Siguiente paso natural (Fase 9 o Fase 10)
+
+Con el modelo de datos ya cerrado (`cedis`, `almacenes`, `asociados`, `rutas`,
+`paradas`, `reportes_transporte` todos relacionados por `cedis_slug`), el
+proyecto está en el punto donde las dos fases que quedan son las de mayor
+impacto: la Fase 9 (terminar de mover lo que falta a Administración) es en
+gran parte administrativa a estas alturas, mientras que la Fase 10 (seguridad
+real: RLS + autenticación de admin) sigue siendo el pendiente más importante
+sin resolver — la contraseña fija de Historial y la ausencia de RLS en las
+tablas siguen siendo el riesgo más grande del proyecto tal como está hoy.
 

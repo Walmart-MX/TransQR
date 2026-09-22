@@ -1451,7 +1451,17 @@
     misma fuente y esta duplicación desaparece — hoy hay que mantener las dos
     listas de slugs sincronizadas a mano si agregas un CEDIS nuevo.
   */
-  const DIRECTORIO_CEDIS_ADMIN = [
+  /*
+    NOTA (Fase 3 — cierre): esto era DIRECTORIO_CEDIS_ADMIN escrito a mano. Se
+    conserva como respaldo de última instancia — la fuente real ahora es la
+    tabla `cedis` de Supabase, igual que en asociado.html (mismo patrón:
+    caché primero, respaldo fijo si no hay caché, refresco en segundo plano
+    sin bloquear ni recargar la sesión actual).
+  */
+  const NOMBRE_TABLA_CEDIS     = 'cedis';     // Fase 3
+  const NOMBRE_TABLA_ALMACENES = 'almacenes'; // Fase 3
+
+  const DIRECTORIO_CEDIS_ADMIN_FALLBACK = [
     {
       slug: 'villahermosa',
       nombre: 'CEDIS Walmart Villahermosa',
@@ -1460,9 +1470,50 @@
         { slug: 'secos', nombre: 'SECOS' },
       ],
     },
-    // Al agregar un CEDIS real en asociado.html, agrega su entrada completa
-    // (slug, nombre, almacenes) aquí también.
   ];
+  const CLAVE_CACHE_DIRECTORIO_CEDIS_ADMIN = 'wm_transporte_admin_directorio_cedis_cache_v1';
+
+  function obtenerDirectorioCedisAdminCacheado() {
+    try { return JSON.parse(localStorage.getItem(CLAVE_CACHE_DIRECTORIO_CEDIS_ADMIN)); }
+    catch (e) { return null; }
+  }
+
+  function guardarDirectorioCedisAdminEnCache(directorio) {
+    try { localStorage.setItem(CLAVE_CACHE_DIRECTORIO_CEDIS_ADMIN, JSON.stringify(directorio)); }
+    catch (e) { console.warn('No se pudo cachear el directorio de CEDIS:', e); }
+  }
+
+  async function consultarDirectorioCedisAdminDesdeSupabase() {
+    if (!supabaseClient) return null;
+    try {
+      const { data, error } = await supabaseClient
+        .from(NOMBRE_TABLA_CEDIS)
+        .select('slug, nombre, ' + NOMBRE_TABLA_ALMACENES + '(slug, nombre, activo)')
+        .eq('activo', true);
+      if (error) {
+        console.warn('No se pudo consultar la tabla cedis (¿ya aplicaste el esquema de la Fase 3?):', error);
+        return null;
+      }
+      if (!data || !data.length) return null;
+      return data.map(c => ({
+        slug: c.slug,
+        nombre: c.nombre,
+        almacenes: (c[NOMBRE_TABLA_ALMACENES] || [])
+          .filter(a => a.activo !== false)
+          .map(a => ({ slug: a.slug, nombre: a.nombre })),
+      }));
+    } catch (e) {
+      console.warn('Sin conexión al consultar el directorio de CEDIS:', e);
+      return null;
+    }
+  }
+
+  const DIRECTORIO_CEDIS_ADMIN = obtenerDirectorioCedisAdminCacheado() || DIRECTORIO_CEDIS_ADMIN_FALLBACK;
+
+  consultarDirectorioCedisAdminDesdeSupabase().then(directorio => {
+    if (directorio) guardarDirectorioCedisAdminEnCache(directorio);
+  });
+
   const CLAVE_URL_BASE_QR = 'wm_transporte_admin_url_base';
   const NOMBRE_TABLA_RUTAS   = 'rutas';   // Fase 8
   const NOMBRE_TABLA_PARADAS = 'paradas'; // Fase 8
