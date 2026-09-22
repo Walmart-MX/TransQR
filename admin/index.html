@@ -1352,6 +1352,23 @@
         <div class="chip-grid" id="chip-filtro-situacion"></div>
       </div>
 
+      <!-- Filtros nuevos (Fase 9): tipo de reporte, estatus, asociado -->
+      <div class="row-2" style="margin-top:14px;">
+        <div class="field">
+          <label>Tipo de reporte</label>
+          <select id="filtro-tipo-reporte" onchange="cambiarFiltroTipoReporte()"></select>
+        </div>
+        <div class="field">
+          <label>Estatus</label>
+          <select id="filtro-estatus" onchange="cambiarFiltroEstatus()"></select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Buscar por asociado (nombre o No. de empleado)</label>
+        <input type="text" id="filtro-asociado" placeholder="Ej. Jaime o 8155457"
+          oninput="cambiarFiltroAsociado()">
+      </div>
+
       <!-- ═══ CUERPO: VISTA LISTA ═══ -->
       <div id="historial-cuerpo-lista">
         <!-- Filtros rápidos de fecha -->
@@ -1544,6 +1561,17 @@
     { valor: 'Otro',      etiqueta: 'Otro' },
   ];
 
+  // Catálogo de tipos de reporte (Fase 9) — mismos valores que los chips del
+  // formulario en asociado.html. Si agregas un tipo nuevo ahí, agrégalo aquí
+  // también para que el filtro del historial lo reconozca.
+  const TIPOS_REPORTE_CATALOGO = [
+    'Retraso en salida', 'Retraso en llegada', 'Unidad en mal estado',
+    'No se presentó la unidad', 'Sobrecupo', 'Conducta del operador',
+    'Cambio de ruta sin aviso', 'Falta de calefacción / A/C',
+    'Accidente / Incidente', 'Acoso', 'Soborno', 'Otro',
+  ];
+
+
   /* ════════════════════════════════
      6. TABS
   ════════════════════════════════ */
@@ -1616,6 +1644,10 @@
   let filtroSituacionSeleccionada = new Set(); // vacío = todas las situaciones
   let filtroCedisActivo = 'Ambos'; // 'Ambos' | 'Perecederos' | 'SECOS' — esto es ALMACÉN, no CEDIS (ver Fase 7)
   let filtroCedisRealActivo = 'todos'; // 'todos' | slug de DIRECTORIO_CEDIS_ADMIN — CEDIS real (Fase 7)
+  let filtroTipoReporteActivo = 'todos'; // 'todos' | valor de TIPOS_REPORTE_CATALOGO (Fase 9)
+  let filtroEstatusActivo = 'todos'; // 'todos' | clave de ESTATUS_CATALOGO (Fase 9)
+  let filtroAsociadoTexto = ''; // búsqueda por nombre o número de empleado (Fase 9)
+  let debounceFiltroAsociado = null;
   let vistaHistorialActiva = 'lista'; // 'lista' | 'tendencia'
   let ultimosResultadosHistorial = []; // cache del último fetch, para exportar a CSV
   let ultimoConcentradoCalculado = []; // cache del último concentrado, para exportar a CSV
@@ -1710,6 +1742,40 @@
     );
     if (vistaHistorialActiva === 'lista') renderizarHistorial();
     else renderizarTendencia();
+  }
+
+  // Pinta los selects de tipo de reporte y estatus (Fase 9), con "Todos" +
+  // el catálogo correspondiente.
+  function poblarSelectsTipoYEstatus() {
+    document.getElementById('filtro-tipo-reporte').innerHTML =
+      '<option value="todos">Todos</option>' +
+      TIPOS_REPORTE_CATALOGO.map(t => `<option value="${t}">${t}</option>`).join('');
+    document.getElementById('filtro-estatus').innerHTML =
+      '<option value="todos">Todos</option>' +
+      Object.keys(ESTATUS_CATALOGO).map(clave => `<option value="${clave}">${ESTATUS_CATALOGO[clave].etiqueta}</option>`).join('');
+  }
+
+  function cambiarFiltroTipoReporte() {
+    filtroTipoReporteActivo = document.getElementById('filtro-tipo-reporte').value;
+    if (vistaHistorialActiva === 'lista') renderizarHistorial();
+    else renderizarTendencia();
+  }
+
+  function cambiarFiltroEstatus() {
+    filtroEstatusActivo = document.getElementById('filtro-estatus').value;
+    if (vistaHistorialActiva === 'lista') renderizarHistorial();
+    // El estatus no aplica a la vista de Tendencia (cuenta reportes por
+    // semana sin importar su seguimiento), a propósito.
+  }
+
+  // Con "debounce" para no disparar una consulta a Supabase en cada tecla —
+  // espera un momento breve de pausa antes de buscar.
+  function cambiarFiltroAsociado() {
+    clearTimeout(debounceFiltroAsociado);
+    debounceFiltroAsociado = setTimeout(() => {
+      filtroAsociadoTexto = document.getElementById('filtro-asociado').value.trim();
+      if (vistaHistorialActiva === 'lista') renderizarHistorial();
+    }, 400);
   }
 
   // Pinta los chips de situación (una sola vez, al cargar la app) con "Todas" + el catálogo.
@@ -1854,6 +1920,7 @@
     if (filtroCedisActivo !== 'Ambos') consulta = consulta.eq('cedis', filtroCedisActivo);
     if (filtroCedisRealActivo !== 'todos') consulta = consulta.eq('cedis_slug', filtroCedisRealActivo);
     if (filtroSituacionSeleccionada.size > 0) consulta = consulta.overlaps('situaciones', [...filtroSituacionSeleccionada]);
+    if (filtroTipoReporteActivo !== 'todos') consulta = consulta.eq('tipo_reporte', filtroTipoReporteActivo);
 
     const { data, error } = await consulta;
     if (error) {
@@ -1955,6 +2022,12 @@
     // "overlaps": trae el reporte si comparte AL MENOS UNA de las situaciones marcadas
     if (filtroSituacionSeleccionada.size > 0) {
       consulta = consulta.overlaps('situaciones', [...filtroSituacionSeleccionada]);
+    }
+    if (filtroTipoReporteActivo !== 'todos') consulta = consulta.eq('tipo_reporte', filtroTipoReporteActivo);
+    if (filtroEstatusActivo !== 'todos') consulta = consulta.eq('estatus', filtroEstatusActivo);
+    if (filtroAsociadoTexto) {
+      // Coincide por nombre O por número de empleado, sin importar mayúsculas.
+      consulta = consulta.or(`nombre.ilike.%${filtroAsociadoTexto}%,num_empleado.ilike.%${filtroAsociadoTexto}%`);
     }
     consulta = consulta.order('fecha', { ascending: false }).order('hora', { ascending: false });
 
@@ -2123,6 +2196,7 @@
   ════════════════════════════════ */
   renderizarChipsSituacion();
   renderizarChipsCedisReal();
+  poblarSelectsTipoYEstatus();
   aplicarFiltroRapido(document.querySelector('#chip-filtro-historial .chip[data-filtro="hoy"]'), 'hoy');
 
   // Aviso claro de si Supabase está conectado, para no dar falsas expectativas

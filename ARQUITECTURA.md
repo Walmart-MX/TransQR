@@ -332,14 +332,69 @@ un `uuid` interno ahí solo agregaría una traducción extra en cada capa sin
 beneficio real. `cedis.slug` es `UNIQUE`, así que las llaves foráneas son
 igual de válidas que si apuntaran al `id`.
 
-## Siguiente paso natural (Fase 9 o Fase 10)
+## Fase 9 — Administración de reportes (implementada)
 
-Con el modelo de datos ya cerrado (`cedis`, `almacenes`, `asociados`, `rutas`,
-`paradas`, `reportes_transporte` todos relacionados por `cedis_slug`), el
-proyecto está en el punto donde las dos fases que quedan son las de mayor
-impacto: la Fase 9 (terminar de mover lo que falta a Administración) es en
-gran parte administrativa a estas alturas, mientras que la Fase 10 (seguridad
-real: RLS + autenticación de admin) sigue siendo el pendiente más importante
-sin resolver — la contraseña fija de Historial y la ausencia de RLS en las
-tablas siguen siendo el riesgo más grande del proyecto tal como está hoy.
+El Historial ya vivía completo en `/admin/` desde la Fase 1 (lista, filtros de
+fecha/almacén/CEDIS/situación, seguimiento, tendencia, concentrado, CSV). Lo
+que faltaba del checklist original de esta fase eran tres filtros específicos,
+ahora agregados:
+
+- **Filtrar por tipo de reporte** — select con el mismo catálogo de 12 tipos
+  que usan los chips del formulario en `asociado.html` (`TIPOS_REPORTE_CATALOGO`,
+  duplicado a propósito por ahora — ver nota de deuda técnica abajo). Aplica
+  tanto a la Lista como a la Tendencia semanal.
+- **Filtrar por estatus** — select con `ESTATUS_CATALOGO` (ya existente).
+  Aplica solo a la Lista: no tiene sentido filtrar la Tendencia semanal por
+  estatus de seguimiento, que cambia después de que el reporte ya se contó.
+- **Buscar por asociado** — texto libre que busca por nombre O número de
+  empleado (`ilike` en Supabase, sin distinguir mayúsculas), con una pequeña
+  espera (400 ms) antes de consultar para no disparar una petición por cada
+  tecla.
+
+**Deuda técnica reconocida:** `TIPOS_REPORTE_CATALOGO` en `admin.html` es una
+copia de los mismos 12 valores que ya viven como chips en el formulario de
+`asociado.html`. Si agregas un tipo de reporte nuevo, hay que actualizar los
+dos lugares. Se resuelve solo cuando ese catálogo pase a vivir en una tabla de
+Supabase (mismo patrón que `cedis`/`almacenes`/`rutas` — no lo hice ahora
+porque no lo pediste explícitamente y ya son varias tablas nuevas en esta
+migración; lo señalo para cuando quieras cerrarlo).
+
+**Nada cambió en `asociado.html`** — como pide la Fase 9, estas funciones
+administrativas nunca aparecieron ahí y siguen sin aparecer.
+
+## Corrección de bug — pantalla "CEDIS no encontrado" siempre visible
+
+**Reportado en producción** (`walmart-mx.github.io/TransQR/cedis/villahermosa/`):
+la pantalla de error de la Fase 4 aparecía siempre, con el link vacío
+(`"El enlace que abriste () no corresponde..."`), y debajo — hasta con scroll —
+se veía el formulario funcionando con normalidad.
+
+**Causa:** el `style` inline de esa pantalla tenía la propiedad `display`
+escrita dos veces:
+```html
+style="display:none; min-height:100vh; display:flex; ..."
+```
+En CSS, cuando una propiedad se repite en el mismo bloque, gana la última —
+así que `display:flex` anulaba el `display:none` inicial y el banner quedaba
+visible desde el primer render, sin importar si el CEDIS se encontraba o no.
+Como el texto del slug solo se llena por JavaScript en el caso "no
+encontrado", en el caso normal (CEDIS sí encontrado) ese texto se quedaba
+vacío — de ahí el link vacío en el mensaje.
+
+**Corrección:** se quitó la segunda declaración de `display`, dejando el
+control de visibilidad exclusivamente en manos del JavaScript de
+`resolverCedisDesdeURL()`, como estaba pensado desde el inicio. Se revisó
+sistemáticamente todo el archivo por si el mismo patrón (`style` con una
+propiedad repetida) aparecía en otro lugar — no se encontró ningún otro caso.
+
+**Archivos corregidos:** `app/index.html` y `404.html` (deben ser copias
+idénticas — ver Fase 4 sobre por qué existen ambos).
+
+## Siguiente paso natural (Fase 10)
+
+Con el checklist de administración de reportes completo, solo queda la Fase
+10: seguridad real. Es, con diferencia, el pendiente más importante del
+proyecto — la contraseña fija de Historial (`6154`, visible en el código
+fuente de un repo público de GitHub) y la ausencia de políticas RLS en
+Supabase siguen siendo el riesgo más grande tal como está la aplicación hoy.
 
