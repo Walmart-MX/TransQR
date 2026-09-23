@@ -1414,14 +1414,16 @@
 
     if (supabaseClient) {
       try {
+        // Fase 10: ya no se hace SELECT directo sobre `asociados` (esa tabla
+        // no tiene ninguna política para el rol anónimo). Se usa una función
+        // controlada que solo devuelve el registro de ESTE número, nunca la
+        // tabla completa.
         const { data, error } = await supabaseClient
-          .from(NOMBRE_TABLA_ASOCIADOS)
-          .select('numero_asociado, nombre, area, celular')
-          .eq('numero_asociado', numEmpleado)
-          .maybeSingle();
-        if (!error && data) {
-          actualizarCacheAsociado(numEmpleado, data);
-          return { numEmpleado, nombre: data.nombre || '', area: data.area || '', celular: data.celular || '', encontrado: true };
+          .rpc('f_buscar_asociado', { p_numero: numEmpleado });
+        const registro = Array.isArray(data) ? data[0] : data;
+        if (!error && registro) {
+          actualizarCacheAsociado(numEmpleado, registro);
+          return { numEmpleado, nombre: registro.nombre || '', area: registro.area || '', celular: registro.celular || '', encontrado: true };
         }
         if (error) console.warn('No se pudo consultar el asociado en Supabase, se intenta con caché local:', error);
       } catch (e) {
@@ -1443,12 +1445,18 @@
     actualizarCacheAsociado(datos.num_empleado, { nombre: datos.nombre, area: datos.area, celular: datos.celular });
     if (!supabaseClient || !datos.num_empleado) return;
     try {
-      const { error } = await supabaseClient.from(NOMBRE_TABLA_ASOCIADOS).upsert({
-        numero_asociado: datos.num_empleado,
-        nombre: datos.nombre,
-        area: datos.area,
-        celular: datos.celular,
-      }, { onConflict: 'numero_asociado' });
+      // Fase 10: ya no se hace upsert directo sobre `asociados` (esa tabla no
+      // tiene ninguna política de escritura para el rol anónimo). La función
+      // f_guardar_asociado_desde_reporte() crea el registro si es nuevo, pero
+      // si el número YA existía solo actualiza el celular — nunca sobrescribe
+      // un nombre/área que el equipo de Transporte ya haya cargado a mano.
+      const { error } = await supabaseClient.rpc('f_guardar_asociado_desde_reporte', {
+        p_numero: datos.num_empleado,
+        p_nombre: datos.nombre,
+        p_area: datos.area,
+        p_celular: datos.celular,
+        p_cedis_slug: CONFIG_CEDIS.slug,
+      });
       if (error) console.warn('No se pudo guardar el celular del asociado en Supabase:', error);
     } catch (e) {
       console.warn('Sin conexión al guardar el celular del asociado:', e);
@@ -1939,14 +1947,16 @@
 
     // Refresca el estatus y el mensaje de seguimiento reales desde Supabase (si hay
     // conexión); si no, se muestra el último dato conocido guardado localmente.
+    // Fase 10: ya no se hace SELECT directo sobre `reportes_transporte` (esa
+    // tabla no tiene política de lectura para el rol anónimo). Se usa una
+    // función controlada que solo devuelve estatus/comentario de los folios
+    // que este dispositivo ya conoce — nunca la tabla completa.
     let infoPorFolio = {};
     if (supabaseClient) {
       try {
         const folios = locales.map(r => r.folio).filter(Boolean);
         const { data, error } = await supabaseClient
-          .from(NOMBRE_TABLA)
-          .select('folio, estatus, comentario_seguimiento')
-          .in('folio', folios);
+          .rpc('f_obtener_estatus_reportes', { p_folios: folios });
         if (!error && data) data.forEach(r => { infoPorFolio[r.folio] = r; });
       } catch (e) {
         console.warn('No se pudo refrescar el estatus de "Mis Reportes":', e);

@@ -946,6 +946,38 @@
 <body>
 
 <!-- ══════════════════════════════════
+     LOGIN (Fase 10) — reemplaza la contraseña fija. Protege TODO el panel
+     admin, no solo Historial. Se muestra hasta que Supabase Auth confirme
+     una sesión válida.
+══════════════════════════════════ -->
+<div id="pantalla-login" style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px;">
+  <div class="modal-box" style="max-width:380px;">
+    <div class="modal-header">
+      <div class="modal-spark">🔒</div>
+      <h2>Panel Administrativo</h2>
+      <p>Inicia sesión con tu cuenta de Transporte para continuar.</p>
+    </div>
+    <div class="modal-field">
+      <label>Correo <span>*</span></label>
+      <input type="email" id="login-email" placeholder="tucorreo@ejemplo.com" autocomplete="username">
+    </div>
+    <div class="modal-field">
+      <label>Contraseña <span>*</span></label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter'){ event.preventDefault(); iniciarSesionAdmin(); }">
+    </div>
+    <div class="modal-error" id="login-error">⚠️ Correo o contraseña incorrectos.</div>
+    <button class="btn-modal-continue" id="btn-login" onclick="iniciarSesionAdmin()">Iniciar sesión →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     CONTENIDO DEL PANEL ADMIN — oculto hasta que verificarSesionAdmin()
+     confirme una sesión válida contra Supabase Auth.
+══════════════════════════════════ -->
+<div id="admin-contenido" style="display:none;">
+
+<!-- ══════════════════════════════════
      HEADER
 ══════════════════════════════════ -->
 <header>
@@ -955,6 +987,10 @@
     <p>CEDIS Walmart Villahermosa — Uso exclusivo de Transporte</p>
   </div>
   <div class="header-cedis-badge" id="header-cedis-badge">ADMIN</div>
+  <button type="button" onclick="cerrarSesionAdmin()"
+    style="background:none; border:1.5px solid rgba(255,255,255,0.4); color:white; border-radius:20px; padding:6px 12px; font-size:0.72rem; font-weight:700; cursor:pointer; margin-left:8px; flex-shrink:0;">
+    Cerrar sesión
+  </button>
 </header>
 
 <!-- ══════════════════════════════════
@@ -1294,26 +1330,10 @@
 ══════════════════════════════════ -->
 <div class="panel" id="panel-historial">
 
-  <!-- ═══ CANDADO DE ACCESO: por ahora esta sección es exclusiva del equipo de
-       Transporte (a futuro, "Mis Reportes" queda para cada asociado y esta
-       sección — Historial — solo para Transportes). ═══ -->
-  <div class="card" id="historial-gate">
-    <div class="card-title">🔒 Acceso a Historial</div>
-    <p class="historial-nota" style="margin-top:0;">
-      Esta sección es de uso exclusivo del equipo de Transporte. Ingresa la
-      contraseña para continuar.
-    </p>
-    <div class="modal-field" style="margin-bottom:6px;">
-      <label>Contraseña</label>
-      <input type="password" id="historial-password" placeholder="••••" maxlength="10"
-             onkeydown="if(event.key==='Enter'){ event.preventDefault(); validarAccesoHistorial(); }">
-    </div>
-    <div class="modal-error" id="historial-password-error">⚠️ Contraseña incorrecta, intenta de nuevo.</div>
-    <button class="btn-modal-continue" onclick="validarAccesoHistorial()">Entrar →</button>
-  </div>
-
-  <!-- ═══ CONTENIDO REAL DEL HISTORIAL: oculto hasta validar la contraseña ═══ -->
-  <div id="historial-contenido" style="display:none;">
+  <!-- ═══ CONTENIDO DEL HISTORIAL: ya no tiene su propio candado — todo el
+       panel admin está protegido por la sesión real de Supabase Auth (ver
+       Fase 10), no por una sección suelta. ═══ -->
+  <div id="historial-contenido">
     <div class="card">
       <div class="card-title">🗂️ Historial de Reportes</div>
       <p class="historial-nota" id="historial-nota-central">
@@ -1588,7 +1608,7 @@
     if (name === 'rutas') {
       renderizarRutas();
     }
-    if (name === 'historial' && historialDesbloqueado) {
+    if (name === 'historial') {
       // Ya validó la contraseña antes: refresca la vista que esté activa
       if (vistaHistorialActiva === 'tendencia') renderizarTendencia();
       else renderizarHistorial();
@@ -1603,24 +1623,97 @@
      contraseña por usuario o expiración de sesión, aquí es donde se
      conectaría un login real.
   ════════════════════════════════ */
-  const HISTORIAL_PASSWORD = '6154';
-  let historialDesbloqueado = false;
+  /*
+    NOTA (Fase 10 — seguridad): la contraseña fija HISTORIAL_PASSWORD ('6154')
+    se eliminó por completo. Protegía solo la interfaz — cualquiera con la
+    anon key podía leer/escribir las tablas directo contra la API de Supabase,
+    sin pasar por aquí. Ahora TODO el panel admin (no solo Historial) está
+    protegido por una sesión real de Supabase Auth, verificada aquí y exigida
+    de nuevo por las políticas RLS del lado del servidor — así que aunque
+    alguien se salte esta pantalla, Supabase le niega la operación igual.
+  */
+  let sesionAdmin = null;
 
-  function validarAccesoHistorial() {
-    const input = document.getElementById('historial-password');
-    const error = document.getElementById('historial-password-error');
-
-    if (input.value.trim() === HISTORIAL_PASSWORD) {
-      historialDesbloqueado = true;
-      document.getElementById('historial-gate').style.display = 'none';
-      document.getElementById('historial-contenido').style.display = 'block';
-      input.value = '';
-      error.style.display = 'none';
-      if (vistaHistorialActiva === 'tendencia') renderizarTendencia();
-      else renderizarHistorial();
-    } else {
-      error.style.display = 'block';
+  async function verificarSesionAdmin() {
+    if (!supabaseClient) {
+      document.getElementById('login-error').textContent = '⚠️ Supabase no está configurado; no se puede iniciar sesión.';
+      document.getElementById('login-error').style.display = 'block';
+      return;
     }
+    const { data } = await supabaseClient.auth.getSession();
+    if (data && data.session) {
+      sesionAdmin = data.session;
+      mostrarAdminAutenticado();
+    }
+    // Si no hay sesión, la pantalla de login ya está visible por defecto —
+    // no hace falta hacer nada más aquí.
+  }
+
+  async function iniciarSesionAdmin() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const error = document.getElementById('login-error');
+    const boton = document.getElementById('btn-login');
+
+    error.style.display = 'none';
+    if (!email || !password) {
+      error.textContent = '⚠️ Escribe tu correo y contraseña.';
+      error.style.display = 'block';
+      return;
+    }
+
+    boton.disabled = true;
+    const textoOriginal = boton.textContent;
+    boton.textContent = 'Verificando…';
+
+    const { data, error: errorAuth } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+    boton.disabled = false;
+    boton.textContent = textoOriginal;
+
+    if (errorAuth || !data.session) {
+      console.warn('No se pudo iniciar sesión:', errorAuth);
+      error.textContent = '⚠️ Correo o contraseña incorrectos.';
+      error.style.display = 'block';
+      return;
+    }
+
+    sesionAdmin = data.session;
+    mostrarAdminAutenticado();
+  }
+
+  async function cerrarSesionAdmin() {
+    if (supabaseClient) await supabaseClient.auth.signOut();
+    sesionAdmin = null;
+    document.getElementById('admin-contenido').style.display = 'none';
+    document.getElementById('pantalla-login').style.display = 'flex';
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-password').value = '';
+  }
+
+  // Se llama una sola vez, justo después de confirmar sesión (login nuevo o
+  // sesión ya guardada por el navegador). Aquí es donde arranca todo lo que
+  // antes se inicializaba sin condición al final del archivo.
+  function mostrarAdminAutenticado() {
+    document.getElementById('pantalla-login').style.display = 'none';
+    document.getElementById('admin-contenido').style.display = 'block';
+
+    poblarSelectsCedisAsociados();
+    poblarSelectsRutas();
+    inicializarGeneradorQR();
+    renderizarChipsSituacion();
+    renderizarChipsCedisReal();
+    poblarSelectsTipoYEstatus();
+    aplicarFiltroRapido(document.querySelector('#chip-filtro-historial .chip[data-filtro="hoy"]'), 'hoy');
+
+    // Aviso claro de si Supabase está conectado, para no dar falsas expectativas
+    document.getElementById('historial-nota-central').textContent = supabaseClient
+      ? '✅ Historial compartido activo: los reportes de todos los asociados, desde cualquier dispositivo, se guardan y consultan aquí en tiempo real.'
+      : '⚠️ Supabase todavía no está configurado. Configura SUPABASE_URL y SUPABASE_ANON_KEY en el código para activar el historial compartido.';
+
+    // Al abrir el panel admin (con internet), intenta reenviar en silencio cualquier
+    // reporte que se haya quedado pendiente en este dispositivo por falta de conexión.
+    sincronizarPendientes();
   }
 
   // Etiqueta legible para mostrar el arreglo de situaciones en texto (usada en CSV y tarjetas)
@@ -1695,7 +1788,7 @@
     const restantes = pendientes.filter(p => !exitosos.includes(p));
     localStorage.setItem(CLAVE_PENDIENTES, JSON.stringify(restantes));
     // Refresca el historial si estaba abierto
-    if (exitosos.length && historialDesbloqueado) {
+    if (exitosos.length && sesionAdmin) {
       if (vistaHistorialActiva === 'tendencia') renderizarTendencia();
       else renderizarHistorial();
     }
@@ -1903,8 +1996,7 @@
   }
 
   async function renderizarTendencia() {
-    if (!historialDesbloqueado) return; // no consultar/mostrar nada hasta validar la contraseña
-    const wrap = document.getElementById('tendencia-svg-wrap');
+        const wrap = document.getElementById('tendencia-svg-wrap');
     if (!supabaseClient) {
       wrap.innerHTML = '<div class="tendencia-vacio">Supabase todavía no está configurado.</div>';
       return;
@@ -2040,8 +2132,7 @@
   }
 
   async function renderizarHistorial() {
-    if (!historialDesbloqueado) return; // no consultar/mostrar nada hasta validar la contraseña
-    const lista = document.getElementById('historial-lista');
+        const lista = document.getElementById('historial-lista');
 
     if (!supabaseClient) {
       lista.innerHTML = '<div class="historial-vacio">Supabase todavía no está configurado (ver SUPABASE_URL / SUPABASE_ANON_KEY en el código).</div>';
@@ -2190,23 +2281,6 @@
       ? `Se sincronizaron ${enviados} reporte(s) pendiente(s). ${despues ? `Quedan ${despues} sin conexión todavía.` : ''}`
       : 'No se pudo conectar con el servidor. Se reintentará más tarde.');
   }
-
-  /* ════════════════════════════════
-     12. INICIALIZACIÓN
-  ════════════════════════════════ */
-  renderizarChipsSituacion();
-  renderizarChipsCedisReal();
-  poblarSelectsTipoYEstatus();
-  aplicarFiltroRapido(document.querySelector('#chip-filtro-historial .chip[data-filtro="hoy"]'), 'hoy');
-
-  // Aviso claro de si Supabase está conectado, para no dar falsas expectativas
-  document.getElementById('historial-nota-central').textContent = supabaseClient
-    ? '✅ Historial compartido activo: los reportes de todos los asociados, desde cualquier dispositivo, se guardan y consultan aquí en tiempo real.'
-    : '⚠️ Supabase todavía no está configurado. Configura SUPABASE_URL y SUPABASE_ANON_KEY en el código para activar el historial compartido.';
-
-  // Al abrir el panel admin (con internet), intenta reenviar en silencio cualquier
-  // reporte que se haya quedado pendiente en este dispositivo por falta de conexión.
-  sincronizarPendientes();
 
   /* ════════════════════════════════
      13. GENERACIÓN DE QR POR CEDIS (Fase 5)
@@ -2739,10 +2813,12 @@
     }).join('');
   }
 
-  poblarSelectsCedisAsociados();
-  poblarSelectsRutas();
-
-  inicializarGeneradorQR();
+  // Fase 10: ya no se inicializa nada sin condición — primero se verifica
+  // si hay una sesión de administrador válida contra Supabase Auth.
+  verificarSesionAdmin();
 </script>
+
+</div>
+<!-- fin de #admin-contenido -->
 </body>
 </html>

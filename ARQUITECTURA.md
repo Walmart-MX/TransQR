@@ -390,11 +390,67 @@ propiedad repetida) aparecía en otro lugar — no se encontró ningún otro cas
 **Archivos corregidos:** `app/index.html` y `404.html` (deben ser copias
 idénticas — ver Fase 4 sobre por qué existen ambos).
 
-## Siguiente paso natural (Fase 10)
+## Fase 10 — Seguridad real (implementada)
 
-Con el checklist de administración de reportes completo, solo queda la Fase
-10: seguridad real. Es, con diferencia, el pendiente más importante del
-proyecto — la contraseña fija de Historial (`6154`, visible en el código
-fuente de un repo público de GitHub) y la ausencia de políticas RLS en
-Supabase siguen siendo el riesgo más grande tal como está la aplicación hoy.
+Esta fase reemplazó protección de interfaz por protección de datos. Resumen:
+
+**Diagnóstico (antes de esta fase):** ninguna tabla tenía Row Level Security
+activado. Esto significa que cualquier persona con la anon key (visible en el
+código fuente de un repo público) podía leer/escribir **todo** directo contra
+la API de Supabase — reportes con denuncias de acoso/soborno, celulares y
+nombres de todo el directorio de asociados, rutas, paradas — sin pasar jamás
+por la contraseña de Historial, que solo ocultaba un botón en la interfaz.
+
+**SQL aplicado** (`fase10-seguridad.sql`):
+- RLS activado en las 6 tablas.
+- Tabla `admins` (allowlist contra `auth.users` de Supabase) + función
+  `es_admin()` para usarla en políticas.
+- `reportes_transporte`: el rol anónimo solo puede `INSERT`; `SELECT`/`UPDATE`
+  exclusivos para administradores autenticados.
+- `asociados`: **sin ninguna política para el rol anónimo** — cero acceso
+  directo. Todo pasa por dos funciones `security definer`:
+  - `f_buscar_asociado(numero)` — devuelve un solo registro, nunca la tabla.
+  - `f_guardar_asociado_desde_reporte(...)` — crea el registro si es nuevo;
+    si ya existía, **solo actualiza el celular**, nunca sobrescribe el
+    nombre/área que el equipo de Transporte ya cargó. Este último punto no
+    es solo RLS: cierra un hueco de integridad de datos que encontré de
+    paso (antes, un asociado podía sobrescribir el nombre de otro número de
+    empleado sin querer).
+  - `f_obtener_estatus_reportes(folios[])` — para que "Mis Reportes" pueda
+    leer su propio estatus sin abrir `SELECT` general sobre los reportes.
+- `cedis`, `almacenes`, `rutas`, `paradas`: lectura pública de lo `activo`
+  (la app del asociado los necesita para el formulario), escritura exclusiva
+  de administradores.
+
+**Cambios de código:**
+- `admin.html`: se eliminó por completo la contraseña fija (`HISTORIAL_PASSWORD`).
+  Ahora **todo** el panel admin (no solo Historial — antes Asociados, Rutas y
+  QR no tenían ningún candado) está detrás de una pantalla de login real con
+  Supabase Auth (correo + contraseña), con botón de "Cerrar sesión". La
+  sesión persiste entre visitas (Supabase Auth la guarda en el navegador).
+- `asociado.html`: las tres operaciones que antes tocaban `asociados`/
+  `reportes_transporte` directo ahora llaman a las funciones controladas via
+  `supabaseClient.rpc(...)` en vez de `.from(tabla).select/upsert(...)`.
+
+**Cómo crear administradores:** Supabase Dashboard → Authentication → Users
+→ Add user (correo + contraseña) → copiar su UUID → `insert into admins
+(user_id) values ('...');`. Sin ese último paso, el usuario puede iniciar
+sesión pero `es_admin()` sigue devolviendo `false`.
+
+**Lo que queda fuera de esta fase, a propósito:** recuperación de contraseña
+para admins (se gestiona desde el propio dashboard de Supabase, no se
+implementó un flujo de "olvidé mi contraseña" en la UI), y roles diferenciados
+entre administradores (hoy todo admin puede todo — no hay "solo lectura" ni
+permisos por CEDIS). Ninguno de los dos se pidió explícitamente; quedan como
+posibles extensiones futuras si hacen falta.
+
+## Cierre del roadmap
+
+Con esta fase, las diez fases del plan original quedan completas: separación
+asociado/admin, arquitectura de rutas, configuración dinámica por CEDIS
+(URL, QR, directorio de asociados, rutas/paradas), reportes multi-CEDIS, y
+ahora seguridad real con RLS y autenticación. El proyecto pasó de "una
+aplicación de reportes para Villahermosa" a una base multi-CEDIS con permisos
+de verdad — lista para agregar el segundo CEDIS real cuando llegue, sin tocar
+código, solo datos.
 
