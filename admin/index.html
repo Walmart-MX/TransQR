@@ -1673,7 +1673,14 @@
 
     if (errorAuth || !data.session) {
       console.warn('No se pudo iniciar sesión:', errorAuth);
-      error.textContent = '⚠️ Correo o contraseña incorrectos.';
+      const mensaje = (errorAuth && errorAuth.message) || '';
+      if (/email not confirmed/i.test(mensaje)) {
+        error.textContent = '⚠️ Este correo todavía no está confirmado. Pide a quien administra Supabase que lo confirme (Authentication → Users), o corre: update auth.users set email_confirmed_at = now() where email = \'' + email + '\';';
+      } else if (/invalid login credentials/i.test(mensaje)) {
+        error.textContent = '⚠️ Correo o contraseña incorrectos.';
+      } else {
+        error.textContent = '⚠️ No se pudo iniciar sesión' + (mensaje ? ': ' + mensaje : '.') + ' Revisa la consola del navegador para más detalle.';
+      }
       error.style.display = 'block';
       return;
     }
