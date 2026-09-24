@@ -939,43 +939,169 @@
     #panel-qr { display: block !important; padding: 0; }
     .qr-card { box-shadow: none; border: 3px solid var(--yellow); }
     body { background: white; }
-    #modal-overlay { display: none !important; }
+    #modal-overlay, #login-overlay { display: none !important; }
   }
+
+  /* ════════════════════════════════
+     LOGIN DE ACCESO (candado único del panel admin)
+  ════════════════════════════════ */
+  #login-overlay {
+    position: fixed; inset: 0;
+    background: linear-gradient(135deg, var(--dark) 0%, var(--blue) 100%);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .login-box {
+    background: white;
+    border-radius: 22px;
+    padding: 34px 28px 28px;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: var(--shadow-lg);
+    animation: slideUp 0.35s ease;
+  }
+  .login-logo {
+    width: 60px; height: 60px;
+    background: var(--dark);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px;
+    margin: 0 auto 16px;
+    box-shadow: 0 4px 16px rgba(0,48,135,0.35);
+  }
+  .login-box h2 { text-align:center; font-size:1.15rem; font-weight:800; color:var(--dark); margin-bottom:4px; }
+  .login-box p.login-sub { text-align:center; font-size:0.8rem; color:var(--muted); margin-bottom:22px; }
+  .login-btn {
+    width: 100%; margin-top: 10px; padding: 13px;
+    background: var(--dark); color: white; border: none; border-radius: 12px;
+    font-size: 0.95rem; font-weight: 800; cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .login-btn:hover { background: var(--blue); }
+  .login-btn:active { transform: scale(0.98); }
+  .login-error {
+    display: none; color: var(--error); font-size: 0.78rem; font-weight: 600;
+    text-align: center; margin-top: 12px;
+  }
+
+  /* ════════════════════════════════
+     DASHBOARD / INDICADORES (rediseño)
+  ════════════════════════════════ */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .kpi-card {
+    background: white;
+    border-radius: 14px;
+    padding: 14px 14px 12px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--blue);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .kpi-card .kpi-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .kpi-card .kpi-icon { font-size: 1.1rem; }
+  .kpi-card .kpi-label {
+    font-size: 0.68rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: .04em; color: var(--muted);
+  }
+  .kpi-card .kpi-num { font-size: 1.65rem; font-weight: 900; color: var(--dark); line-height:1; }
+  .kpi-card .kpi-sub { font-size: 0.68rem; color: var(--muted); margin-top: 4px; }
+  .kpi-card.kpi-pendiente { border-left-color: #d97706; }
+  .kpi-card.kpi-resuelto  { border-left-color: #16a34a; }
+  .kpi-card.kpi-total     { border-left-color: var(--blue); }
+  .kpi-card.kpi-semana    { border-left-color: var(--yellow); }
+  .kpi-refresco {
+    font-size: 0.68rem; color: var(--muted); text-align:right; margin: -8px 0 14px;
+  }
+
+  /* Disclosure (secciones colapsables — "aparece cuando lo necesites") */
+  details.disclosure {
+    background: white;
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(0,113,206,0.06);
+    overflow: hidden;
+  }
+  details.disclosure > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 16px 18px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    user-select: none;
+  }
+  details.disclosure > summary::-webkit-details-marker { display: none; }
+  details.disclosure > summary .chev { transition: transform 0.2s ease; color: var(--blue); font-size: 0.8rem; }
+  details.disclosure[open] > summary .chev { transform: rotate(90deg); }
+  details.disclosure > summary .badge-count {
+    background: var(--surface); color: var(--blue); font-size: 0.68rem; font-weight: 800;
+    padding: 2px 9px; border-radius: 999px; margin-right: auto; margin-left: 10px;
+  }
+  details.disclosure .disclosure-body { padding: 0 18px 18px; }
+  details.disclosure[open] > summary { border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+
+  .panel-header-row {
+    display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px;
+  }
+  .panel-header-row h2 { font-size: 1.02rem; font-weight: 800; color: var(--dark); }
+  .btn-chip-action {
+    background: var(--blue); color: white; border: none; border-radius: 20px;
+    padding: 9px 16px; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+    white-space: nowrap; font-family: inherit;
+  }
+  .btn-chip-action:hover { background: var(--dark); }
+  .btn-cerrar-sesion {
+    background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 20px; padding: 5px 12px; font-size: 0.68rem; font-weight: 700;
+    cursor: pointer; font-family: inherit; flex-shrink: 0;
+  }
+  .btn-cerrar-sesion:hover { background: rgba(255,255,255,0.28); }
 </style>
 </head>
 <body>
 
 <!-- ══════════════════════════════════
-     LOGIN (Fase 10) — reemplaza la contraseña fija. Protege TODO el panel
-     admin, no solo Historial. Se muestra hasta que Supabase Auth confirme
-     una sesión válida.
+     LOGIN (Fase 10) — Supabase Auth real (correo + contraseña), no una
+     cortina de JavaScript. Protege TODO admin/index.html, y las políticas
+     RLS del lado del servidor exigen esta misma sesión de nuevo — así que
+     aunque alguien se saltara esta pantalla, Supabase le niega la operación
+     igual. Ver ARQUITECTURA.md, Fase 10.
 ══════════════════════════════════ -->
-<div id="pantalla-login" style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px;">
-  <div class="modal-box" style="max-width:380px;">
-    <div class="modal-header">
-      <div class="modal-spark">🔒</div>
-      <h2>Panel Administrativo</h2>
-      <p>Inicia sesión con tu cuenta de Transporte para continuar.</p>
-    </div>
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">🔐</div>
+    <h2>Panel Administrativo</h2>
+    <p class="login-sub">Inicia sesión con tu cuenta de Transporte para continuar.</p>
     <div class="modal-field">
       <label>Correo <span>*</span></label>
-      <input type="email" id="login-email" placeholder="tucorreo@ejemplo.com" autocomplete="username">
+      <input type="email" id="login-email" autocomplete="username" placeholder="tucorreo@ejemplo.com"
+             onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('login-password').focus(); }">
     </div>
-    <div class="modal-field">
+    <div class="modal-field" style="margin-bottom:0;">
       <label>Contraseña <span>*</span></label>
-      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"
+      <input type="password" id="login-password" autocomplete="current-password" placeholder="••••••••"
              onkeydown="if(event.key==='Enter'){ event.preventDefault(); iniciarSesionAdmin(); }">
     </div>
-    <div class="modal-error" id="login-error">⚠️ Correo o contraseña incorrectos.</div>
-    <button class="btn-modal-continue" id="btn-login" onclick="iniciarSesionAdmin()">Iniciar sesión →</button>
+    <div class="login-error" id="login-error">⚠️ Correo o contraseña incorrectos.</div>
+    <button class="login-btn" id="btn-login" onclick="iniciarSesionAdmin()">Iniciar sesión →</button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════
-     CONTENIDO DEL PANEL ADMIN — oculto hasta que verificarSesionAdmin()
-     confirme una sesión válida contra Supabase Auth.
-══════════════════════════════════ -->
-<div id="admin-contenido" style="display:none;">
+<div id="app-admin-contenido" style="display:none;">
 
 <!-- ══════════════════════════════════
      HEADER
@@ -984,14 +1110,41 @@
   <div class="header-spark">🚌</div>
   <div class="header-info">
     <h1>Panel Administrativo de Transporte</h1>
-    <p>CEDIS Walmart Villahermosa — Uso exclusivo de Transporte</p>
+    <p id="header-admin-nombre">CEDIS Walmart Villahermosa — Uso exclusivo de Transporte</p>
   </div>
   <div class="header-cedis-badge" id="header-cedis-badge">ADMIN</div>
-  <button type="button" onclick="cerrarSesionAdmin()"
-    style="background:none; border:1.5px solid rgba(255,255,255,0.4); color:white; border-radius:20px; padding:6px 12px; font-size:0.72rem; font-weight:700; cursor:pointer; margin-left:8px; flex-shrink:0;">
-    Cerrar sesión
-  </button>
+  <button type="button" class="btn-cerrar-sesion" onclick="abrirCambioPassword()" style="margin-right:6px;">🔑 Contraseña</button>
+  <button type="button" class="btn-cerrar-sesion" onclick="cerrarSesionAdmin()">Salir</button>
 </header>
+
+<!-- ══════════════════════════════════
+     CAMBIO DE CONTRASEÑA — cualquier admin puede cambiar la suya propia en
+     cualquier momento (útil sobre todo tras la contraseña genérica inicial).
+     Usa supabase.auth.updateUser(), sobre la sesión ya activa: no hace falta
+     saber la contraseña anterior.
+══════════════════════════════════ -->
+<div id="password-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,48,135,0.72); backdrop-filter:blur(6px); z-index:1000; align-items:center; justify-content:center; padding:16px;">
+  <div class="modal-box" style="max-width:380px;">
+    <div class="modal-header">
+      <div class="modal-spark">🔑</div>
+      <h2>Cambiar contraseña</h2>
+      <p>Se aplica de inmediato a tu propia cuenta de administrador.</p>
+    </div>
+    <div class="modal-field">
+      <label>Nueva contraseña <span>*</span></label>
+      <input type="password" id="password-nueva" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+    </div>
+    <div class="modal-field" style="margin-bottom:0;">
+      <label>Confirmar contraseña <span>*</span></label>
+      <input type="password" id="password-confirmar" autocomplete="new-password" placeholder="Repite la contraseña"
+             onkeydown="if(event.key==='Enter'){ event.preventDefault(); guardarNuevaPassword(); }">
+    </div>
+    <div class="modal-error" id="password-error"></div>
+    <div class="seguimiento-estado" id="password-estado"></div>
+    <button class="btn-modal-continue" id="btn-guardar-password" onclick="guardarNuevaPassword()">Guardar contraseña</button>
+    <button class="btn-borrar-historial" style="margin-top:8px;" onclick="cerrarCambioPassword()">Cancelar</button>
+  </div>
+</div>
 
 <!-- ══════════════════════════════════
      TABS
@@ -1000,6 +1153,7 @@
   <div class="tab active" onclick="showTab('qr')">📱 Generar / Imprimir QR</div>
   <div class="tab" onclick="showTab('asociados')">👥 Asociados</div>
   <div class="tab" onclick="showTab('rutas')">🛣️ Rutas y Paradas</div>
+  <div class="tab" onclick="showTab('lt')">🚌 LT Transportista</div>
   <div class="tab" onclick="showTab('historial')">🔒 Historial y Seguimiento</div>
 </div>
 
@@ -1032,6 +1186,17 @@
         </div>
       </div>
       <div class="hint-auto" id="qr-url-resultado" style="margin-top:10px; word-break:break-all;"></div>
+
+      <!-- ══════════════════════════════════
+           NÚMEROS DE WHATSAPP POR ALMACÉN
+           Antes solo se podían cambiar editando el código (tabla `almacenes`,
+           columna whatsapp). Aquí se edita el mismo dato, desde el panel.
+      ══════════════════════════════════ -->
+      <div class="field" style="margin-top:16px; margin-bottom:0;">
+        <label>📱 Número de WhatsApp por almacén (a dónde llegan los reportes)</label>
+        <div id="qr-telefonos-lista"></div>
+        <div class="seguimiento-estado" id="qr-telefonos-estado"></div>
+      </div>
     </div>
 
     <div class="qr-card">
@@ -1208,7 +1373,12 @@
 ══════════════════════════════════ -->
 <div class="panel" id="panel-asociados">
 
-  <div class="card">
+  <div class="panel-header-row">
+    <h2>👥 Asociados</h2>
+    <button type="button" class="btn-chip-action" onclick="toggleFormularioAsociado()">➕ Nuevo asociado</button>
+  </div>
+
+  <div class="card" id="card-form-asociado" style="display:none;">
     <div class="card-title">➕ Nuevo / editar asociado</div>
     <input type="hidden" id="asociado-form-original-numero">
     <div class="row-2">
@@ -1223,7 +1393,7 @@
     </div>
     <div class="row-2">
       <div class="field">
-        <label>Área / Departamento</label>
+        <label>Área</label>
         <input type="text" id="asociado-form-area" placeholder="Ej. TRANSPORTE">
       </div>
       <div class="field">
@@ -1245,7 +1415,7 @@
       </div>
     </div>
     <button class="btn-guardar-seguimiento" id="btn-guardar-asociado" onclick="guardarAsociadoDesdeAdmin()">💾 Guardar asociado</button>
-    <button class="btn-borrar-historial" style="margin-top:8px;" onclick="limpiarFormularioAsociado()">✖️ Cancelar edición / nuevo</button>
+    <button class="btn-borrar-historial" style="margin-top:8px;" onclick="toggleFormularioAsociado()">✖️ Cerrar</button>
     <div class="seguimiento-estado" id="asociado-form-estado"></div>
   </div>
 
@@ -1267,25 +1437,38 @@
       </div>
     </div>
 
+    <!-- Resumen en vez de volcar la lista completa de golpe: total y desglose
+         por área. El detalle de un asociado en particular solo aparece al
+         buscar por número o nombre — ver renderizarAsociados(). -->
+    <div id="asociados-resumen-card" style="background:var(--surface); border:1.5px dashed var(--border); border-radius:12px; padding:14px 16px; margin-bottom:14px;">
+      <div id="asociados-resumen-total" style="font-weight:800; color:var(--dark); margin-bottom:8px;">Cargando…</div>
+      <div id="asociados-resumen-areas"></div>
+    </div>
+
     <div class="field">
-      <label>Buscar por número o nombre</label>
+      <label>Buscar por número o nombre (para ver el detalle)</label>
       <input type="text" id="asociados-buscar" placeholder="Ej. 8155457 o Jaime" oninput="renderizarAsociados()">
     </div>
 
-    <div class="hint-auto" id="asociados-resumen" style="margin-top:0;">0 asociados encontrados</div>
+    <div class="hint-auto" id="asociados-resumen" style="margin-top:0;"></div>
     <div id="asociados-lista"></div>
-
-    <div class="historial-estatus-editor" style="border-top:1.5px dashed var(--border); margin-top:16px; padding-top:14px;">
-      <label style="flex-shrink:0;">📥 Importar CSV:</label>
-      <input type="file" id="asociados-importar-input" accept=".csv" onchange="importarAsociadosCSV(event)" style="flex:1; border:none; padding:0; background:none;">
-    </div>
-    <p class="historial-nota" style="margin-top:8px;">
-      Formato esperado (con encabezados): <code>numero_asociado,nombre,area,celular,cedis_slug</code>.
-      Las filas sin <code>cedis_slug</code> se asignan al primer CEDIS del directorio.
-      Los asociados existentes (mismo número) se actualizan; los nuevos se crean como activos.
-    </p>
-    <div class="seguimiento-estado" id="asociados-importar-estado"></div>
   </div>
+
+  <details class="disclosure">
+    <summary><span>📥 Importar asociados por CSV</span><span class="chev">▶</span></summary>
+    <div class="disclosure-body">
+      <div class="historial-estatus-editor" style="border-top:none; margin-top:0; padding-top:0;">
+        <label style="flex-shrink:0;">Archivo:</label>
+        <input type="file" id="asociados-importar-input" accept=".csv" onchange="importarAsociadosCSV(event)" style="flex:1; border:none; padding:0; background:none;">
+      </div>
+      <p class="historial-nota" style="margin-top:8px;">
+        Formato esperado (con encabezados): <code>numero_asociado,nombre,area,celular,cedis_slug</code>.
+        Las filas sin <code>cedis_slug</code> se asignan al primer CEDIS del directorio.
+        Los asociados existentes (mismo número) se actualizan; los nuevos se crean como activos.
+      </p>
+      <div class="seguimiento-estado" id="asociados-importar-estado"></div>
+    </div>
+  </details>
 
 </div>
 
@@ -1326,19 +1509,78 @@
 </div>
 
 <!-- ══════════════════════════════════
+     PANEL LT TRANSPORTISTA (Fase 11)
+     Catálogo de líneas de transporte (hoy: TEPER, SELVA MAYA) que el
+     asociado elige en "LT Transportista" dentro del formulario. Antes ese
+     campo era texto libre ("Unidad / Económico"); ahora es un catálogo para
+     poder medir el nivel de servicio de cada LT en Historial.
+══════════════════════════════════ -->
+<div class="panel" id="panel-lt">
+
+  <div class="card">
+    <div class="card-title">🚌 LT Transportista</div>
+    <p class="historial-nota" style="margin-top:0;">
+      Estas son las líneas de transporte que aparecen para elegir en el formulario del
+      asociado. Desactivar una LT la oculta del formulario sin borrar el historial de
+      reportes que ya tiene.
+    </p>
+    <div class="row-2" style="align-items:flex-end;">
+      <div class="field" style="margin-bottom:0;">
+        <label>Nueva LT</label>
+        <input type="text" id="lt-nueva-nombre" placeholder="Ej. NUEVA TRANSPORTADORA"
+               onkeydown="if(event.key==='Enter'){ event.preventDefault(); crearTransportista(); }">
+      </div>
+      <button class="btn-guardar-seguimiento" style="margin-top:0;" onclick="crearTransportista()">➕ Agregar LT</button>
+    </div>
+    <div class="seguimiento-estado" id="lt-estado-general"></div>
+  </div>
+
+  <div id="lt-lista"></div>
+
+</div>
+
+<!-- ══════════════════════════════════
      PANEL HISTORIAL — ARCHIVO DE REPORTES
 ══════════════════════════════════ -->
 <div class="panel" id="panel-historial">
 
-  <!-- ═══ CONTENIDO DEL HISTORIAL: ya no tiene su propio candado — todo el
-       panel admin está protegido por la sesión real de Supabase Auth (ver
-       Fase 10), no por una sección suelta. ═══ -->
+  <!-- ═══ RESUMEN / INDICADORES — lo primero que se ve al entrar a Historial.
+       Ya no hay un segundo candado aquí: todo admin/index.html está protegido
+       por el login de entrada (#login-overlay), así que el contenido se
+       muestra directo. ═══ -->
+  <div class="panel-header-row">
+    <h2>🗂️ Historial y Seguimiento</h2>
+  </div>
+
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi-card kpi-total" onclick="irAHistorialConFiltroRapido('hoy')">
+      <div class="kpi-top"><span class="kpi-icon">📨</span><span class="kpi-label">Hoy</span></div>
+      <div class="kpi-num" id="kpi-hoy">—</div>
+      <div class="kpi-sub">reportes recibidos hoy</div>
+    </div>
+    <div class="kpi-card kpi-semana" onclick="irAHistorialConFiltroRapido('semana')">
+      <div class="kpi-top"><span class="kpi-icon">📅</span><span class="kpi-label">Esta semana</span></div>
+      <div class="kpi-num" id="kpi-semana">—</div>
+      <div class="kpi-sub">reportes recibidos</div>
+    </div>
+    <div class="kpi-card kpi-pendiente" onclick="irAHistorialConFiltroEstatusRapido('En revisión')">
+      <div class="kpi-top"><span class="kpi-icon">🔍</span><span class="kpi-label">Pendientes</span></div>
+      <div class="kpi-num" id="kpi-pendientes">—</div>
+      <div class="kpi-sub">enviados o en revisión</div>
+    </div>
+    <div class="kpi-card kpi-resuelto" onclick="irAHistorialConFiltroEstatusRapido('Resuelto')">
+      <div class="kpi-top"><span class="kpi-icon">✅</span><span class="kpi-label">Resueltos</span></div>
+      <div class="kpi-num" id="kpi-resueltos">—</div>
+      <div class="kpi-sub">esta semana</div>
+    </div>
+  </div>
+  <div class="kpi-refresco" id="kpi-refresco"></div>
+
   <div id="historial-contenido">
     <div class="card">
-      <div class="card-title">🗂️ Historial de Reportes</div>
-      <p class="historial-nota" id="historial-nota-central">
-        Cada reporte enviado desde este teléfono/navegador queda guardado aquí automáticamente,
-        para que puedas consultarlo o descargarlo por día, semana o mes cuando lo necesites.
+      <p class="historial-nota" id="historial-nota-central" style="margin-top:0;">
+        Cada reporte enviado se guarda aquí automáticamente. Toca un indicador de arriba para
+        saltar directo a ese grupo de reportes, o usa la búsqueda y los filtros abajo.
       </p>
 
       <!-- Vista: Lista de reportes vs Tendencia semanal -->
@@ -1347,60 +1589,57 @@
         <div class="chip" data-vista="tendencia" onclick="cambiarVistaHistorial('tendencia')">📈 Tendencia semanal</div>
       </div>
 
-      <!-- Filtro por almacén (esto es lo que antes se llamaba "CEDIS" — ver
-           nota de la Fase 7 en ARQUITECTURA.md: Perecederos/SECOS son
-           almacenes dentro de un mismo CEDIS, no CEDIS distintos) -->
-      <div class="field" style="margin-top:14px;">
-        <label>Almacén</label>
-        <div class="chip-grid" id="chip-filtro-cedis">
-          <div class="chip selected" data-cedis="Ambos" onclick="filtrarPorCedis('Ambos')">Ambos</div>
-          <div class="chip" data-cedis="Perecederos" onclick="filtrarPorCedis('Perecederos')">🥦 Perecederos</div>
-          <div class="chip" data-cedis="SECOS" onclick="filtrarPorCedis('SECOS')">📦 SECOS</div>
-        </div>
+      <!-- Filtros rápidos de fecha: siempre visibles, son los que más se usan -->
+      <div class="chip-grid" id="chip-filtro-historial" style="margin-top:14px;">
+        <div class="chip selected" data-filtro="hoy" onclick="aplicarFiltroRapido(this,'hoy')">Hoy</div>
+        <div class="chip" data-filtro="semana" onclick="aplicarFiltroRapido(this,'semana')">Esta semana</div>
+        <div class="chip" data-filtro="mes" onclick="aplicarFiltroRapido(this,'mes')">Este mes</div>
+        <div class="chip" data-filtro="todo" onclick="aplicarFiltroRapido(this,'todo')">Todo</div>
       </div>
 
-      <!-- Filtro por CEDIS real (Fase 7: cedis_slug). Hoy solo hay una opción,
-           pero ya queda operativo para cuando exista un segundo CEDIS. -->
-      <div class="field" style="margin-top:14px;">
-        <label>CEDIS</label>
-        <div class="chip-grid" id="chip-filtro-cedis-real"></div>
-      </div>
-
-      <!-- Filtro por situación observada -->
-      <div class="field" style="margin-top:14px;">
-        <label>Filtrar por situación observada</label>
-        <div class="chip-grid" id="chip-filtro-situacion"></div>
-      </div>
-
-      <!-- Filtros nuevos (Fase 9): tipo de reporte, estatus, asociado -->
-      <div class="row-2" style="margin-top:14px;">
-        <div class="field">
-          <label>Tipo de reporte</label>
-          <select id="filtro-tipo-reporte" onchange="cambiarFiltroTipoReporte()"></select>
-        </div>
-        <div class="field">
-          <label>Estatus</label>
-          <select id="filtro-estatus" onchange="cambiarFiltroEstatus()"></select>
-        </div>
-      </div>
-      <div class="field">
+      <div class="field" style="margin-top:14px; margin-bottom:0;">
         <label>Buscar por asociado (nombre o No. de empleado)</label>
         <input type="text" id="filtro-asociado" placeholder="Ej. Jaime o 8155457"
           oninput="cambiarFiltroAsociado()">
       </div>
+    </div>
 
-      <!-- ═══ CUERPO: VISTA LISTA ═══ -->
-      <div id="historial-cuerpo-lista">
-        <!-- Filtros rápidos de fecha -->
-        <div class="chip-grid" id="chip-filtro-historial" style="margin-top:14px;">
-          <div class="chip selected" data-filtro="hoy" onclick="aplicarFiltroRapido(this,'hoy')">Hoy</div>
-          <div class="chip" data-filtro="semana" onclick="aplicarFiltroRapido(this,'semana')">Esta semana</div>
-          <div class="chip" data-filtro="mes" onclick="aplicarFiltroRapido(this,'mes')">Este mes</div>
-          <div class="chip" data-filtro="todo" onclick="aplicarFiltroRapido(this,'todo')">Todo</div>
+    <!-- ═══ FILTROS AVANZADOS — colapsados por defecto: la info aparece
+         solo cuando se necesita, en vez de mostrar todo de entrada. ═══ -->
+    <details class="disclosure" id="detalle-filtros">
+      <summary>
+        <span>🔍 Filtros avanzados</span>
+        <span class="badge-count" id="badge-filtros-activos" style="display:none;">0 activos</span>
+        <span class="chev">▶</span>
+      </summary>
+      <div class="disclosure-body">
+        <div class="field">
+          <label>Almacén</label>
+          <div class="chip-grid" id="chip-filtro-cedis">
+            <div class="chip selected" data-cedis="Ambos" onclick="filtrarPorCedis('Ambos')">Ambos</div>
+            <div class="chip" data-cedis="Perecederos" onclick="filtrarPorCedis('Perecederos')">🥦 Perecederos</div>
+            <div class="chip" data-cedis="SECOS" onclick="filtrarPorCedis('SECOS')">📦 SECOS</div>
+          </div>
         </div>
-
-        <!-- Rango personalizado -->
+        <div class="field" style="margin-top:14px;">
+          <label>CEDIS</label>
+          <div class="chip-grid" id="chip-filtro-cedis-real"></div>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label>Filtrar por situación observada</label>
+          <div class="chip-grid" id="chip-filtro-situacion"></div>
+        </div>
         <div class="row-2" style="margin-top:14px;">
+          <div class="field">
+            <label>Tipo de reporte</label>
+            <select id="filtro-tipo-reporte" onchange="cambiarFiltroTipoReporte()"></select>
+          </div>
+          <div class="field">
+            <label>Estatus</label>
+            <select id="filtro-estatus" onchange="cambiarFiltroEstatus()"></select>
+          </div>
+        </div>
+        <div class="row-2">
           <div class="field">
             <label>Desde</label>
             <input type="date" id="historial-desde" onchange="marcarFiltroPersonalizado()">
@@ -1410,40 +1649,69 @@
             <input type="date" id="historial-hasta" onchange="marcarFiltroPersonalizado()">
           </div>
         </div>
+      </div>
+    </details>
 
+      <!-- ═══ CUERPO: VISTA LISTA ═══ -->
+      <div id="historial-cuerpo-lista">
+        <div class="card">
         <div class="hint-auto" id="historial-resumen" style="margin-top:0;">0 reportes encontrados</div>
 
-        <!-- Concentrado por situación, comparado por CEDIS (preview) -->
-        <div id="concentrado-situaciones" class="card" style="margin-top:14px; padding:16px; display:none;">
-          <div class="card-title" style="font-size:0.95rem;">📊 Concentrado por situación (rango seleccionado)</div>
-          <div class="concentrado-leyenda">
-            <span><span class="dot dot-perecederos"></span> Perecederos</span>
-            <span><span class="dot dot-secos"></span> SECOS</span>
+        <!-- Concentrado por situación — colapsado: es un detalle analítico, no
+             lo primero que hace falta ver. -->
+        <details class="disclosure" id="concentrado-situaciones" style="box-shadow:none; border:1px solid var(--border); margin-top:10px;">
+          <summary>
+            <span>📊 Concentrado por situación</span>
+            <span class="chev">▶</span>
+          </summary>
+          <div class="disclosure-body">
+            <div class="concentrado-leyenda" style="margin-top:10px;">
+              <span><span class="dot dot-perecederos"></span> Perecederos</span>
+              <span><span class="dot dot-secos"></span> SECOS</span>
+            </div>
+            <div id="concentrado-lista"></div>
+            <button class="btn-exportar-concentrado" onclick="descargarConcentradoCSV()">⬇️ Exportar concentrado (CSV)</button>
           </div>
-          <div id="concentrado-lista"></div>
-          <button class="btn-exportar-concentrado" onclick="descargarConcentradoCSV()">⬇️ Exportar concentrado (CSV)</button>
-        </div>
+        </details>
 
-        <div id="historial-lista"></div>
+        <!-- Nivel de servicio por LT (Fase 11) — cuenta reportes por LT
+             Transportista dentro del rango filtrado, con % resueltos como
+             proxy de nivel de servicio. Reportes viejos (antes de Fase 11,
+             cuando el campo era texto libre) también aparecen, agrupados
+             por lo que sea que tuvieran guardado en "unidad". -->
+        <details class="disclosure" id="concentrado-lt" style="box-shadow:none; border:1px solid var(--border); margin-top:10px;">
+          <summary>
+            <span>🚌 Nivel de servicio por LT Transportista</span>
+            <span class="chev">▶</span>
+          </summary>
+          <div class="disclosure-body">
+            <div id="concentrado-lt-lista"></div>
+          </div>
+        </details>
+
+        <div id="historial-lista" style="margin-top:14px;"></div>
 
         <button class="btn-descargar-historial" onclick="descargarHistorialCSV()">⬇️ Descargar CSV del rango seleccionado</button>
         <button class="btn-borrar-historial" onclick="reintentarPendientesManual()">🔄 Reintentar reportes pendientes sin conexión</button>
+        </div>
       </div>
 
       <!-- ═══ CUERPO: VISTA TENDENCIA SEMANAL ═══ -->
       <div id="historial-cuerpo-tendencia" style="display:none;">
-        <p class="historial-nota" style="margin-top:14px;">
+        <div class="card">
+        <p class="historial-nota" style="margin-top:0;">
           Muestra el total de reportes por semana de las últimas 8 semanas (usa los filtros de
           CEDIS y situación de arriba, pero no el rango de fechas — siempre mira 8 semanas atrás).
         </p>
         <div id="tendencia-svg-wrap"></div>
+        </div>
       </div>
 
-    </div>
   </div>
 </div>
 
-
+</div>
+<!-- fin de #app-admin-contenido -->
 
 <!-- ══════════════════════════════════
      JAVASCRIPT
@@ -1584,11 +1852,18 @@
   // Catálogo de tipos de reporte (Fase 9) — mismos valores que los chips del
   // formulario en asociado.html. Si agregas un tipo nuevo ahí, agrégalo aquí
   // también para que el filtro del historial lo reconozca.
+  // Catálogo de tipos de reporte (Fase 9) — mismos valores que las subcategorías
+  // del formulario en app/index.html. Si agregas una subcategoría nueva ahí,
+  // agrégala aquí también para que el filtro del historial la reconozca.
+  // Incluye también "Conducta del operador" (valor histórico, antes de que el
+  // formulario se dividiera en subcategorías de Operador) para poder seguir
+  // filtrando reportes viejos ya guardados con ese valor.
   const TIPOS_REPORTE_CATALOGO = [
-    'Retraso en salida', 'Retraso en llegada', 'Unidad en mal estado',
-    'No se presentó la unidad', 'Sobrecupo', 'Conducta del operador',
-    'Cambio de ruta sin aviso', 'Falta de calefacción / A/C',
-    'Accidente / Incidente', 'Acoso', 'Soborno', 'Otro',
+    'Retraso en salida', 'Retraso en llegada', 'Bloqueo en el camino', 'Accidente de tránsito',
+    'Unidad en mal estado', 'Falta de calefacción / A/C', 'Accidente / Incidente',
+    'No se presentó la unidad', 'Sobrecupo', 'Cambio de ruta sin aviso',
+    'Conducta del operador', 'Operador con sueño', 'Conducta inapropiada del operador',
+    'Exceso de velocidad', 'Conducción imprudente', 'Otro',
   ];
 
 
@@ -1597,7 +1872,7 @@
   ════════════════════════════════ */
   function showTab(name) {
     document.querySelectorAll('.tab').forEach((t, i) =>
-      t.classList.toggle('active', ['qr', 'asociados', 'rutas', 'historial'][i] === name)
+      t.classList.toggle('active', ['qr', 'asociados', 'rutas', 'lt', 'historial'][i] === name)
     );
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.getElementById('panel-' + name).classList.add('active');
@@ -1608,30 +1883,24 @@
     if (name === 'rutas') {
       renderizarRutas();
     }
+    if (name === 'lt') {
+      renderizarTransportistasAdmin();
+    }
     if (name === 'historial') {
-      // Ya validó la contraseña antes: refresca la vista que esté activa
+      // Todo admin ya está protegido por el login de entrada — se refresca directo.
+      actualizarIndicadoresHistorial();
       if (vistaHistorialActiva === 'tendencia') renderizarTendencia();
       else renderizarHistorial();
     }
   }
 
   /* ════════════════════════════════
-     6-B. ACCESO A HISTORIAL (candado con contraseña)
-     Por ahora es una contraseña fija y sin backend propio: suficiente para que
-     solo el equipo de Transporte entre a esta sección, sin bloquear "Mis
-     Reportes" (que es para cada asociado). Si más adelante quieres una
-     contraseña por usuario o expiración de sesión, aquí es donde se
-     conectaría un login real.
+     6-B. LOGIN DE ACCESO AL PANEL (Fase 10 — Supabase Auth real)
+     Ya no es una cortina de JavaScript con usuario/contraseña fijos: es una
+     sesión real de Supabase Auth, exigida de nuevo por las políticas RLS del
+     lado del servidor (ver fase10-seguridad.sql y es_admin()). Aunque alguien
+     se saltara esta pantalla, Supabase le niega la operación igual.
   ════════════════════════════════ */
-  /*
-    NOTA (Fase 10 — seguridad): la contraseña fija HISTORIAL_PASSWORD ('6154')
-    se eliminó por completo. Protegía solo la interfaz — cualquiera con la
-    anon key podía leer/escribir las tablas directo contra la API de Supabase,
-    sin pasar por aquí. Ahora TODO el panel admin (no solo Historial) está
-    protegido por una sesión real de Supabase Auth, verificada aquí y exigida
-    de nuevo por las políticas RLS del lado del servidor — así que aunque
-    alguien se salte esta pantalla, Supabase le niega la operación igual.
-  */
   let sesionAdmin = null;
 
   async function verificarSesionAdmin() {
@@ -1643,7 +1912,7 @@
     const { data } = await supabaseClient.auth.getSession();
     if (data && data.session) {
       sesionAdmin = data.session;
-      mostrarAdminAutenticado();
+      mostrarPanelAdmin();
     }
     // Si no hay sesión, la pantalla de login ya está visible por defecto —
     // no hace falta hacer nada más aquí.
@@ -1686,41 +1955,24 @@
     }
 
     sesionAdmin = data.session;
-    mostrarAdminAutenticado();
+    mostrarPanelAdmin();
   }
 
   async function cerrarSesionAdmin() {
     if (supabaseClient) await supabaseClient.auth.signOut();
     sesionAdmin = null;
-    document.getElementById('admin-contenido').style.display = 'none';
-    document.getElementById('pantalla-login').style.display = 'flex';
+    document.getElementById('app-admin-contenido').style.display = 'none';
+    document.getElementById('login-overlay').style.display = 'flex';
     document.getElementById('login-email').value = '';
     document.getElementById('login-password').value = '';
   }
 
   // Se llama una sola vez, justo después de confirmar sesión (login nuevo o
-  // sesión ya guardada por el navegador). Aquí es donde arranca todo lo que
-  // antes se inicializaba sin condición al final del archivo.
-  function mostrarAdminAutenticado() {
-    document.getElementById('pantalla-login').style.display = 'none';
-    document.getElementById('admin-contenido').style.display = 'block';
-
-    poblarSelectsCedisAsociados();
-    poblarSelectsRutas();
-    inicializarGeneradorQR();
-    renderizarChipsSituacion();
-    renderizarChipsCedisReal();
-    poblarSelectsTipoYEstatus();
-    aplicarFiltroRapido(document.querySelector('#chip-filtro-historial .chip[data-filtro="hoy"]'), 'hoy');
-
-    // Aviso claro de si Supabase está conectado, para no dar falsas expectativas
-    document.getElementById('historial-nota-central').textContent = supabaseClient
-      ? '✅ Historial compartido activo: los reportes de todos los asociados, desde cualquier dispositivo, se guardan y consultan aquí en tiempo real.'
-      : '⚠️ Supabase todavía no está configurado. Configura SUPABASE_URL y SUPABASE_ANON_KEY en el código para activar el historial compartido.';
-
-    // Al abrir el panel admin (con internet), intenta reenviar en silencio cualquier
-    // reporte que se haya quedado pendiente en este dispositivo por falta de conexión.
-    sincronizarPendientes();
+  // sesión ya guardada por el navegador — Supabase Auth la persiste solo).
+  function mostrarPanelAdmin() {
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('app-admin-contenido').style.display = 'block';
+    inicializarPanelAdmin();
   }
 
   // Etiqueta legible para mostrar el arreglo de situaciones en texto (usada en CSV y tarjetas)
@@ -1795,7 +2047,8 @@
     const restantes = pendientes.filter(p => !exitosos.includes(p));
     localStorage.setItem(CLAVE_PENDIENTES, JSON.stringify(restantes));
     // Refresca el historial si estaba abierto
-    if (exitosos.length && sesionAdmin) {
+    if (exitosos.length) {
+      actualizarIndicadoresHistorial();
       if (vistaHistorialActiva === 'tendencia') renderizarTendencia();
       else renderizarHistorial();
     }
@@ -1953,6 +2206,46 @@
     }).join('');
   }
 
+  // Nivel de servicio por LT Transportista (Fase 11): cuenta reportes por LT
+  // dentro del rango ya filtrado y calcula % resueltos como proxy de qué tan
+  // bien va cada línea. Usa el mismo campo "unidad" que ya se guardaba antes
+  // (cuando era texto libre) — reportes viejos también aparecen, agrupados
+  // por lo que tuvieran guardado ahí.
+  function renderizarConcentradoLT(resultados) {
+    const cont = document.getElementById('concentrado-lt-lista');
+    const conteo = {}; // { lt: { total, resueltos } }
+
+    resultados.forEach(r => {
+      const lt = (r.unidad || '').trim();
+      if (!lt || lt === 'No especificado') return;
+      if (!conteo[lt]) conteo[lt] = { total: 0, resueltos: 0 };
+      conteo[lt].total++;
+      if (r.estatus === 'Resuelto') conteo[lt].resueltos++;
+    });
+
+    const filas = Object.entries(conteo)
+      .map(([lt, c]) => ({ lt, ...c, pct: c.total ? Math.round((c.resueltos / c.total) * 100) : 0 }))
+      .sort((a, b) => b.total - a.total);
+
+    if (!filas.length) {
+      cont.innerHTML = '<div class="historial-desc">Sin LT registrada en los reportes de este rango (o son reportes de antes de tener este campo).</div>';
+      return;
+    }
+
+    const colorPct = pct => pct >= 70 ? '#16a34a' : pct >= 40 ? 'var(--yellow)' : 'var(--error)';
+
+    cont.innerHTML = filas.map(f => `
+      <div class="concentrado-fila">
+        <span class="concentrado-etiqueta">${f.lt}</span>
+        <span class="concentrado-barra-fondo">
+          <span class="concentrado-barra-fill" style="width:${f.pct}%; background:${colorPct(f.pct)};"></span>
+        </span>
+        <span class="concentrado-num">${f.total}</span>
+      </div>
+      <div class="historial-desc" style="margin:-4px 0 10px 0;">${f.pct}% resueltos de ${f.total} reporte${f.total === 1 ? '' : 's'}</div>
+    `).join('');
+  }
+
   // Exporta el concentrado (situación + conteo por CEDIS) a CSV, sin tener que abrir
   // ni descargar la tabla completa de reportes.
   function descargarConcentradoCSV() {
@@ -2003,7 +2296,7 @@
   }
 
   async function renderizarTendencia() {
-        const wrap = document.getElementById('tendencia-svg-wrap');
+    const wrap = document.getElementById('tendencia-svg-wrap');
     if (!supabaseClient) {
       wrap.innerHTML = '<div class="tendencia-vacio">Supabase todavía no está configurado.</div>';
       return;
@@ -2139,7 +2432,8 @@
   }
 
   async function renderizarHistorial() {
-        const lista = document.getElementById('historial-lista');
+    actualizarBadgeFiltrosActivos();
+    const lista = document.getElementById('historial-lista');
 
     if (!supabaseClient) {
       lista.innerHTML = '<div class="historial-vacio">Supabase todavía no está configurado (ver SUPABASE_URL / SUPABASE_ANON_KEY en el código).</div>';
@@ -2156,6 +2450,7 @@
       `${resultados.length} reporte${resultados.length === 1 ? '' : 's'} encontrado${resultados.length === 1 ? '' : 's'}`;
 
     renderizarConcentrado(resultados);
+    renderizarConcentradoLT(resultados);
 
     if (!resultados.length) {
       lista.innerHTML = '<div class="historial-vacio">Sin reportes en este rango todavía.</div>';
@@ -2253,7 +2548,7 @@
 
     const encabezados = [
       'Fecha', 'Hora', 'CEDIS', 'Almacén', 'Nombre', 'No. Empleado', 'Celular', 'Área', 'Turno',
-      'Unidad', 'Ruta', 'Tipo de Reporte', 'Situaciones', 'Descripción', 'Estatus',
+      'LT Transportista', 'Ruta', 'Tipo de Reporte', 'Situaciones', 'Descripción', 'Estatus',
       'Mensaje al asociado', 'Folio'
     ];
     const filas = resultados.map(r => {
@@ -2290,10 +2585,122 @@
   }
 
   /* ════════════════════════════════
+     12. INDICADORES (dashboard de Historial)
+     Se calculan con 3 consultas ligeras a Supabase (conteos, sin traer todas
+     las columnas) para que el panel abra mostrando lo esencial de un vistazo,
+     sin obligar a cargar la lista completa de reportes de entrada.
+  ════════════════════════════════ */
+  async function actualizarIndicadoresHistorial() {
+    const refrescoEl = document.getElementById('kpi-refresco');
+    if (!supabaseClient) {
+      ['kpi-hoy','kpi-semana','kpi-pendientes','kpi-resueltos'].forEach(id => document.getElementById(id).textContent = '—');
+      refrescoEl.textContent = '';
+      return;
+    }
+
+    const hoy = new Date();
+    const inicioHoy = formatearFechaLocal(hoy);
+    const inicioSemana = formatearFechaLocal(inicioDeSemana(hoy));
+
+    try {
+      const [rHoy, rSemana, rPendientes, rResueltos] = await Promise.all([
+        supabaseClient.from(NOMBRE_TABLA).select('folio', { count: 'exact', head: true }).gte('fecha', inicioHoy),
+        supabaseClient.from(NOMBRE_TABLA).select('folio', { count: 'exact', head: true }).gte('fecha', inicioSemana),
+        supabaseClient.from(NOMBRE_TABLA).select('folio', { count: 'exact', head: true }).in('estatus', ['Enviado', 'En revisión']),
+        supabaseClient.from(NOMBRE_TABLA).select('folio', { count: 'exact', head: true }).eq('estatus', 'Resuelto').gte('fecha', inicioSemana),
+      ]);
+
+      document.getElementById('kpi-hoy').textContent        = rHoy.count ?? '—';
+      document.getElementById('kpi-semana').textContent     = rSemana.count ?? '—';
+      document.getElementById('kpi-pendientes').textContent = rPendientes.count ?? '—';
+      document.getElementById('kpi-resueltos').textContent  = rResueltos.count ?? '—';
+      refrescoEl.textContent = 'Actualizado ' + hoy.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      console.warn('No se pudieron calcular los indicadores del historial:', e);
+    }
+  }
+
+  // Atajos: tocar un indicador salta directo al detalle ya filtrado, en vez de
+  // obligar a abrir "Filtros avanzados" a mano.
+  function irAHistorialConFiltroRapido(tipo) {
+    const chip = document.querySelector(`#chip-filtro-historial .chip[data-filtro="${tipo}"]`);
+    if (chip) aplicarFiltroRapido(chip, tipo);
+    document.getElementById('historial-contenido').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function irAHistorialConFiltroEstatusRapido(estatus) {
+    document.getElementById('detalle-filtros').open = true;
+    document.getElementById('filtro-estatus').value = estatus;
+    filtroEstatusActivo = estatus;
+    const chipTodo = document.querySelector('#chip-filtro-historial .chip[data-filtro="todo"]');
+    if (chipTodo) aplicarFiltroRapido(chipTodo, 'todo');
+    else renderizarHistorial();
+    actualizarBadgeFiltrosActivos();
+    document.getElementById('historial-contenido').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Muestra cuántos filtros avanzados están activos en el resumen del disclosure,
+  // para que se sepa de un vistazo si hay filtros aplicados sin tener que abrirlo.
+  function actualizarBadgeFiltrosActivos() {
+    let activos = 0;
+    if (filtroCedisActivo !== 'Ambos') activos++;
+    if (filtroCedisRealActivo !== 'todos') activos++;
+    if (filtroSituacionSeleccionada.size > 0) activos++;
+    if (filtroTipoReporteActivo !== 'todos') activos++;
+    if (filtroEstatusActivo !== 'todos') activos++;
+    if (document.getElementById('historial-desde').value || document.getElementById('historial-hasta').value) activos++;
+
+    const badge = document.getElementById('badge-filtros-activos');
+    if (activos > 0) {
+      badge.style.display = 'inline-block';
+      badge.textContent = `${activos} activo${activos === 1 ? '' : 's'}`;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  /* ════════════════════════════════
+     13. INICIALIZACIÓN DEL PANEL (se ejecuta solo después del login)
+  ════════════════════════════════ */
+  function inicializarPanelAdmin() {
+    cargarNombreAdmin();
+    renderizarChipsSituacion();
+    renderizarChipsCedisReal();
+    poblarSelectsTipoYEstatus();
+    aplicarFiltroRapido(document.querySelector('#chip-filtro-historial .chip[data-filtro="hoy"]'), 'hoy');
+    actualizarIndicadoresHistorial();
+
+    // Aviso claro de si Supabase está conectado, para no dar falsas expectativas
+    document.getElementById('historial-nota-central').textContent = supabaseClient
+      ? 'Toca un indicador para ver ese grupo de reportes, o usa la búsqueda y los filtros avanzados.'
+      : '⚠️ Supabase todavía no está configurado. Configura SUPABASE_URL y SUPABASE_ANON_KEY en el código para activar el historial compartido.';
+
+    // Al abrir el panel admin (con internet), intenta reenviar en silencio cualquier
+    // reporte que se haya quedado pendiente en este dispositivo por falta de conexión.
+    sincronizarPendientes();
+
+    poblarSelectsCedisAsociados();
+    poblarSelectsRutas();
+    inicializarGeneradorQR();
+  }
+
+  // Fase 10: ya no se revisa sessionStorage — se verifica contra la sesión
+  // real de Supabase Auth (persiste entre visitas, la guarda el navegador).
+  verificarSesionAdmin();
+
+  /* ════════════════════════════════
      13. GENERACIÓN DE QR POR CEDIS (Fase 5)
      El QR ya no apunta a una URL fija: se arma con la URL base del sitio
-     (guardada en este navegador) + "/cedis/{slug}/" del CEDIS elegido.
+     (guardada en este navegador) + "/cedis/{slug}/" del CEDIS elegido. Al
+     cambiar el CEDIS en el <select>, tanto el QR/link como los teléfonos de
+     WhatsApp mostrados abajo se actualizan solos (ver regenerarQR()).
   ════════════════════════════════ */
+  // URL real donde ya está publicado el sitio (ver ARQUITECTURA.md — GitHub
+  // Pages). Se usa solo como valor inicial si este navegador nunca ha
+  // guardado una URL base propia, para que el QR de Villahermosa salga listo
+  // sin tener que escribirla a mano la primera vez.
+  const URL_BASE_QR_POR_DEFECTO = 'https://walmart-mx.github.io/TransQR';
+
   function poblarSelectCedisQR() {
     const select = document.getElementById('qr-select-cedis');
     select.innerHTML = DIRECTORIO_CEDIS_ADMIN
@@ -2328,6 +2735,10 @@
       colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.H
     });
+
+    // El CEDIS elegido también decide qué teléfonos de WhatsApp se muestran
+    // abajo para editar — igual de automático que el QR.
+    renderizarTelefonosAlmacenes(slug);
   }
 
   function guardarURLBaseYRegenerar() {
@@ -2342,8 +2753,83 @@
     let urlBaseGuardada = '';
     try { urlBaseGuardada = localStorage.getItem(CLAVE_URL_BASE_QR) || ''; }
     catch (e) { /* sin acceso a localStorage; se queda vacío */ }
-    document.getElementById('qr-url-base').value = urlBaseGuardada;
+    document.getElementById('qr-url-base').value = urlBaseGuardada || URL_BASE_QR_POR_DEFECTO;
     regenerarQR();
+  }
+
+  // ── Números de WhatsApp por almacén (a dónde llegan los reportes) ──────
+  // El dato ya existía en la tabla `almacenes` (columna whatsapp) desde la
+  // Fase 3, pero solo se podía cambiar editando el código. Esto lo hace
+  // editable desde el panel, para el CEDIS elegido arriba.
+  async function renderizarTelefonosAlmacenes(cedisSlug) {
+    const cont = document.getElementById('qr-telefonos-lista');
+    const estadoEl = document.getElementById('qr-telefonos-estado');
+    estadoEl.textContent = '';
+    estadoEl.className = 'seguimiento-estado';
+
+    if (!supabaseClient) {
+      cont.innerHTML = '<div class="historial-desc">Supabase no está configurado.</div>';
+      return;
+    }
+
+    cont.innerHTML = '<div class="historial-desc">Cargando…</div>';
+
+    const { data, error } = await supabaseClient
+      .from(NOMBRE_TABLA_ALMACENES)
+      .select('slug, nombre, whatsapp')
+      .eq('cedis_slug', cedisSlug)
+      .order('nombre', { ascending: true });
+
+    if (error) {
+      console.warn('No se pudo consultar los almacenes:', error);
+      cont.innerHTML = '<div class="historial-desc">No se pudo cargar. ¿Ya aplicaste el esquema de la Fase 3 (tabla `almacenes`)?</div>';
+      return;
+    }
+    if (!data || !data.length) {
+      cont.innerHTML = '<div class="historial-desc">Sin almacenes registrados para este CEDIS.</div>';
+      return;
+    }
+
+    cont.innerHTML = data.map(a => `
+      <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+        <span style="flex:0 0 110px; font-size:0.8rem; font-weight:600;">${a.nombre}</span>
+        <input type="tel" id="tel-almacen-${a.slug}" value="${a.whatsapp || ''}" placeholder="Ej. 529931234567" style="flex:1;">
+        <button type="button" class="btn-guardar-seguimiento" style="margin-top:0; width:auto; padding:9px 12px;"
+          onclick="guardarTelefonoAlmacen('${cedisSlug}', '${a.slug}')" title="Guardar">💾</button>
+      </div>
+    `).join('') + '<div class="modal-field-hint" style="margin-top:8px;">Lada de país + número, sin espacios ni signos (ej. 529931234567 para México).</div>';
+  }
+
+  async function guardarTelefonoAlmacen(cedisSlug, almacenSlug) {
+    const estadoEl = document.getElementById('qr-telefonos-estado');
+    const input = document.getElementById('tel-almacen-' + almacenSlug);
+    const nuevo = input.value.trim();
+
+    estadoEl.textContent = '';
+    estadoEl.className = 'seguimiento-estado';
+
+    if (!nuevo) {
+      estadoEl.textContent = '⚠️ El número no puede quedar vacío.';
+      estadoEl.className = 'seguimiento-estado error';
+      return;
+    }
+    if (!supabaseClient) return;
+
+    const { error } = await supabaseClient
+      .from(NOMBRE_TABLA_ALMACENES)
+      .update({ whatsapp: nuevo })
+      .eq('cedis_slug', cedisSlug)
+      .eq('slug', almacenSlug);
+
+    if (error) {
+      console.warn('No se pudo guardar el número de WhatsApp:', error);
+      estadoEl.textContent = '❌ No se pudo guardar. Revisa tu conexión e intenta de nuevo.';
+      estadoEl.className = 'seguimiento-estado error';
+      return;
+    }
+
+    estadoEl.textContent = '✅ Número actualizado. Los asociados lo verán en su próxima visita a la app (la caché de su teléfono se refresca sola en segundo plano).';
+    estadoEl.className = 'seguimiento-estado ok';
   }
 
   // Descarga el QR actual como PNG. La librería qrcodejs dibuja en un <canvas>
@@ -2367,6 +2853,21 @@
   ════════════════════════════════ */
   let ultimosAsociadosCargados = [];
 
+  // Muestra/oculta el formulario de alta/edición — queda oculto por defecto para
+  // no abrumar con un formulario vacío antes de que se necesite.
+  function toggleFormularioAsociado() {
+    const card = document.getElementById('card-form-asociado');
+    const abierto = card.style.display !== 'none';
+    if (abierto) {
+      card.style.display = 'none';
+    } else {
+      limpiarFormularioAsociado();
+      card.style.display = 'block';
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('asociado-form-numero').focus();
+    }
+  }
+
   function poblarSelectsCedisAsociados() {
     const opciones = DIRECTORIO_CEDIS_ADMIN.map(c => `<option value="${c.slug}">${c.nombre}</option>`).join('');
     document.getElementById('asociado-form-cedis').innerHTML = opciones;
@@ -2388,6 +2889,7 @@
   }
 
   function cargarAsociadoEnFormulario(a) {
+    document.getElementById('card-form-asociado').style.display = 'block';
     document.getElementById('asociado-form-original-numero').value = a.numero_asociado;
     document.getElementById('asociado-form-numero').value = a.numero_asociado;
     document.getElementById('asociado-form-numero').disabled = true; // no se cambia el número en edición
@@ -2454,8 +2956,8 @@
 
     estadoEl.textContent = numeroOriginal ? '✅ Asociado actualizado.' : '✅ Asociado creado.';
     estadoEl.className = 'seguimiento-estado ok';
-    limpiarFormularioAsociado();
     renderizarAsociados();
+    setTimeout(() => { document.getElementById('card-form-asociado').style.display = 'none'; limpiarFormularioAsociado(); }, 900);
   }
 
   async function alternarActivoAsociado(numero, activoActual) {
@@ -2475,14 +2977,20 @@
   async function renderizarAsociados() {
     const cont = document.getElementById('asociados-lista');
     const resumen = document.getElementById('asociados-resumen');
+    const totalEl = document.getElementById('asociados-resumen-total');
+    const areasEl = document.getElementById('asociados-resumen-areas');
 
     if (!supabaseClient) {
       cont.innerHTML = '<div class="historial-vacio">Supabase todavía no está configurado.</div>';
-      resumen.textContent = '0 asociados encontrados';
+      totalEl.textContent = '0 asociados registrados';
+      areasEl.innerHTML = '';
+      resumen.textContent = '';
       return;
     }
 
-    cont.innerHTML = '<div class="historial-vacio">Cargando…</div>';
+    totalEl.textContent = 'Cargando…';
+    areasEl.innerHTML = '';
+    cont.innerHTML = '';
 
     const { data, error } = await supabaseClient
       .from(NOMBRE_TABLA_ASOCIADOS)
@@ -2493,9 +3001,10 @@
       // Si las columnas cedis_slug/activo todavía no existen (esquema de Fase 6
       // no aplicado), Supabase regresa error aquí en vez de una lista vacía.
       console.warn('No se pudo consultar el directorio de asociados:', error);
-      cont.innerHTML = '<div class="historial-vacio">No se pudo cargar el directorio. ' +
+      totalEl.textContent = '';
+      areasEl.innerHTML = '<div class="historial-vacio">No se pudo cargar el directorio. ' +
         '¿Ya aplicaste el esquema de la Fase 6 (columnas cedis_slug y activo en `asociados`)?</div>';
-      resumen.textContent = '0 asociados encontrados';
+      resumen.textContent = '';
       return;
     }
 
@@ -2505,22 +3014,56 @@
     const filtroEstado = document.getElementById('asociados-filtro-estado').value;
     const busqueda = document.getElementById('asociados-buscar').value.trim().toLowerCase();
 
-    const filtrados = ultimosAsociadosCargados.filter(a => {
+    // Respeta los filtros de CEDIS/estado, pero SIN el texto de búsqueda —
+    // este es el universo sobre el que se calcula el resumen.
+    const universo = ultimosAsociadosCargados.filter(a => {
       if (filtroCedis !== 'todos' && a.cedis_slug !== filtroCedis) return false;
       if (filtroEstado === 'activos' && a.activo === false) return false;
       if (filtroEstado === 'inactivos' && a.activo !== false) return false;
-      if (busqueda) {
-        const enNumero = (a.numero_asociado || '').toLowerCase().includes(busqueda);
-        const enNombre = (a.nombre || '').toLowerCase().includes(busqueda);
-        if (!enNumero && !enNombre) return false;
-      }
       return true;
     });
 
-    resumen.textContent = `${filtrados.length} asociado${filtrados.length === 1 ? '' : 's'} encontrado${filtrados.length === 1 ? '' : 's'}`;
+    // ── Resumen: total + desglose por área ─────────────────────────────
+    // En vez de volcar cada asociado, mostramos cuántos hay y de qué áreas —
+    // el detalle individual solo se pide con la búsqueda, más abajo.
+    totalEl.textContent = `${universo.length} asociado${universo.length === 1 ? '' : 's'} registrado${universo.length === 1 ? '' : 's'}`;
+
+    const conteoPorArea = {};
+    universo.forEach(a => {
+      const area = (a.area || '').trim() || 'Sin área';
+      conteoPorArea[area] = (conteoPorArea[area] || 0) + 1;
+    });
+    const filasArea = Object.entries(conteoPorArea).sort((a, b) => b[1] - a[1]);
+
+    areasEl.innerHTML = filasArea.length
+      ? filasArea.map(([area, n]) => `
+          <div style="display:flex; justify-content:space-between; font-size:0.82rem; padding:4px 0; border-bottom:1px dashed var(--border);">
+            <span>${area}</span>
+            <span style="font-weight:700; color:var(--dark);">${n}</span>
+          </div>
+        `).join('')
+      : '<div class="historial-desc">Sin asociados para este filtro.</div>';
+
+    // ── Detalle individual: solo al buscar por número o nombre ─────────
+    // Antes se mostraba SIEMPRE la lista completa (podía ser enorme); ahora
+    // el resumen de arriba cubre "cuántos hay y de qué áreas", y esta lista
+    // solo aparece para encontrar a alguien en concreto.
+    if (!busqueda) {
+      resumen.textContent = '';
+      cont.innerHTML = '';
+      return;
+    }
+
+    const filtrados = universo.filter(a => {
+      const enNumero = (a.numero_asociado || '').toLowerCase().includes(busqueda);
+      const enNombre = (a.nombre || '').toLowerCase().includes(busqueda);
+      return enNumero || enNombre;
+    });
+
+    resumen.textContent = `${filtrados.length} resultado${filtrados.length === 1 ? '' : 's'} para "${document.getElementById('asociados-buscar').value.trim()}"`;
 
     if (!filtrados.length) {
-      cont.innerHTML = '<div class="historial-vacio">Sin asociados para este filtro.</div>';
+      cont.innerHTML = '<div class="historial-vacio">Sin coincidencias.</div>';
       return;
     }
 
@@ -2820,12 +3363,199 @@
     }).join('');
   }
 
-  // Fase 10: ya no se inicializa nada sin condición — primero se verifica
-  // si hay una sesión de administrador válida contra Supabase Auth.
-  verificarSesionAdmin();
-</script>
+  /* ════════════════════════════════
+     16. LT TRANSPORTISTA (Fase 11)
+     Catálogo simple (sin CEDIS/almacén, porque hoy ambas LT sirven a los dos
+     almacenes) que alimenta el <select> "LT Transportista" del formulario.
+  ════════════════════════════════ */
+  const NOMBRE_TABLA_TRANSPORTISTAS = 'transportistas';
+  let ultimosTransportistasCargados = [];
 
-</div>
-<!-- fin de #admin-contenido -->
+  function slugificarTexto(texto) {
+    return (texto || '').trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quita acentos
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  async function crearTransportista() {
+    const estadoEl = document.getElementById('lt-estado-general');
+    const input = document.getElementById('lt-nueva-nombre');
+    const nombre = input.value.trim();
+    if (!nombre) return;
+
+    if (!supabaseClient) {
+      estadoEl.textContent = '⚠️ Supabase no está configurado; no se puede guardar.';
+      estadoEl.className = 'seguimiento-estado error';
+      return;
+    }
+
+    const { error } = await supabaseClient.from(NOMBRE_TABLA_TRANSPORTISTAS).insert([{
+      nombre,
+      slug: slugificarTexto(nombre) || ('lt-' + Date.now()),
+      activo: true,
+    }]);
+
+    if (error) {
+      console.warn('No se pudo crear la LT:', error);
+      estadoEl.textContent = '❌ No se pudo crear. ¿Ya aplicaste el esquema de la Fase 11 (tabla `transportistas`)?';
+      estadoEl.className = 'seguimiento-estado error';
+      return;
+    }
+
+    input.value = '';
+    estadoEl.textContent = '✅ LT agregada.';
+    estadoEl.className = 'seguimiento-estado ok';
+    renderizarTransportistasAdmin();
+  }
+
+  async function alternarActivoTransportista(id, activoActual) {
+    if (!supabaseClient) return;
+    const { error } = await supabaseClient.from(NOMBRE_TABLA_TRANSPORTISTAS).update({ activo: !activoActual }).eq('id', id);
+    if (error) { console.warn('No se pudo cambiar el estado de la LT:', error); alert('No se pudo cambiar el estado.'); return; }
+    renderizarTransportistasAdmin();
+  }
+
+  async function eliminarTransportista(id, nombre) {
+    if (!supabaseClient) return;
+    if (!confirm(`¿Eliminar "${nombre}"? Los reportes que ya la tengan guardada conservan el dato; solo deja de aparecer en el formulario. Si prefieres conservarla mientras no se use, usa "Desactivar" en su lugar.`)) return;
+    const { error } = await supabaseClient.from(NOMBRE_TABLA_TRANSPORTISTAS).delete().eq('id', id);
+    if (error) { console.warn('No se pudo eliminar la LT:', error); alert('No se pudo eliminar.'); return; }
+    renderizarTransportistasAdmin();
+  }
+
+  async function renderizarTransportistasAdmin() {
+    const cont = document.getElementById('lt-lista');
+
+    if (!supabaseClient) {
+      cont.innerHTML = '<div class="historial-vacio">Supabase todavía no está configurado.</div>';
+      return;
+    }
+
+    cont.innerHTML = '<div class="historial-vacio">Cargando…</div>';
+
+    const { data, error } = await supabaseClient
+      .from(NOMBRE_TABLA_TRANSPORTISTAS)
+      .select('id, nombre, activo')
+      .order('nombre', { ascending: true });
+
+    if (error) {
+      console.warn('No se pudo consultar transportistas:', error);
+      cont.innerHTML = '<div class="historial-vacio">No se pudo cargar. ' +
+        '¿Ya aplicaste el esquema de la Fase 11 (tabla `transportistas`)?</div>';
+      return;
+    }
+
+    ultimosTransportistasCargados = data || [];
+
+    if (!ultimosTransportistasCargados.length) {
+      cont.innerHTML = '<div class="historial-vacio">Sin LT registradas todavía. Agrega la primera arriba.</div>';
+      return;
+    }
+
+    cont.innerHTML = ultimosTransportistasCargados.map(t => {
+      const activo = t.activo !== false;
+      return `
+        <div class="historial-item">
+          <div class="historial-top">
+            <span>${t.nombre}</span>
+            <span class="badge-estatus" style="background:${activo ? '#16a34a22' : '#64748b22'}; color:${activo ? '#16a34a' : '#64748b'};">
+              ${activo ? '✅ Activa' : '⛔ Inactiva'}
+            </span>
+          </div>
+          ${!activo ? '<div class="historial-desc" style="color:var(--error);">No aparece en el formulario del asociado.</div>' : ''}
+          <div class="historial-estatus-editor" style="border-top:none; padding-top:8px;">
+            <button type="button" class="btn-guardar-seguimiento" style="margin-top:0; background:${activo ? 'var(--error)' : '#16a34a'};"
+              onclick="alternarActivoTransportista('${t.id}', ${activo})">${activo ? '⛔ Desactivar' : '✅ Activar'}</button>
+            <button type="button" class="btn-guardar-seguimiento" style="margin-top:0; background:var(--muted);"
+              onclick="eliminarTransportista('${t.id}', '${t.nombre.replace(/'/g, "\\'")}')">🗑️ Eliminar</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  /* ════════════════════════════════
+     17. PERFIL DEL ADMIN: nombre en el header y cambio de contraseña (Fase 11)
+  ════════════════════════════════ */
+  // Muestra "Hola, <nombre>" en el header usando la función f_mi_nombre_admin()
+  // (lee la columna `nombre` de la tabla `admins` para este usuario — ver
+  // fase11-lt-y-perfil-admin.sql). Si nadie le puso nombre todavía, muestra el
+  // correo con el que inició sesión en su lugar, para no dejar el header vacío.
+  async function cargarNombreAdmin() {
+    const el = document.getElementById('header-admin-nombre');
+    if (!supabaseClient || !sesionAdmin) return;
+    try {
+      const { data, error } = await supabaseClient.rpc('f_mi_nombre_admin');
+      const nombre = Array.isArray(data) ? data[0] : data;
+      if (!error && nombre) {
+        el.textContent = `Hola, ${nombre} — CEDIS Walmart Villahermosa`;
+        return;
+      }
+    } catch (e) {
+      console.warn('No se pudo obtener el nombre del admin (¿ya aplicaste la Fase 11?):', e);
+    }
+    el.textContent = (sesionAdmin.user && sesionAdmin.user.email) || 'CEDIS Walmart Villahermosa — Uso exclusivo de Transporte';
+  }
+
+  function abrirCambioPassword() {
+    document.getElementById('password-nueva').value = '';
+    document.getElementById('password-confirmar').value = '';
+    document.getElementById('password-error').style.display = 'none';
+    document.getElementById('password-estado').textContent = '';
+    document.getElementById('password-overlay').style.display = 'flex';
+    document.getElementById('password-nueva').focus();
+  }
+
+  function cerrarCambioPassword() {
+    document.getElementById('password-overlay').style.display = 'none';
+  }
+
+  // Cambia la contraseña de la sesión YA activa (supabase.auth.updateUser) —
+  // no hace falta saber la contraseña anterior. Pensado para que cada admin
+  // reemplace la contraseña genérica inicial la primera vez que entra.
+  async function guardarNuevaPassword() {
+    const nueva = document.getElementById('password-nueva').value;
+    const confirmar = document.getElementById('password-confirmar').value;
+    const errorEl = document.getElementById('password-error');
+    const estadoEl = document.getElementById('password-estado');
+    const boton = document.getElementById('btn-guardar-password');
+
+    errorEl.style.display = 'none';
+    estadoEl.textContent = '';
+    estadoEl.className = 'seguimiento-estado';
+
+    if (!nueva || nueva.length < 6) {
+      errorEl.textContent = '⚠️ La contraseña debe tener al menos 6 caracteres.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    if (nueva !== confirmar) {
+      errorEl.textContent = '⚠️ Las contraseñas no coinciden.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    if (!supabaseClient) return;
+
+    boton.disabled = true;
+    const textoOriginal = boton.textContent;
+    boton.textContent = 'Guardando…';
+
+    const { error } = await supabaseClient.auth.updateUser({ password: nueva });
+
+    boton.disabled = false;
+    boton.textContent = textoOriginal;
+
+    if (error) {
+      console.warn('No se pudo cambiar la contraseña:', error);
+      errorEl.textContent = '❌ No se pudo cambiar la contraseña' + (error.message ? ': ' + error.message : '.');
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    estadoEl.textContent = '✅ Contraseña actualizada.';
+    estadoEl.className = 'seguimiento-estado ok';
+    setTimeout(cerrarCambioPassword, 1200);
+  }
+</script>
 </body>
 </html>
