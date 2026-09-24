@@ -40,10 +40,13 @@
     background: rgba(0,48,135,0.72);
     backdrop-filter: blur(6px);
     z-index: 1000;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     padding: 16px;
+  }
+  #modal-overlay.activo {
+    display: flex;
     animation: fadeIn 0.35s ease;
   }
   #modal-overlay.hiding {
@@ -423,6 +426,39 @@
     gap: 5px;
   }
 
+  /* Enlace pequeño "cambiar de asociado" bajo el resumen precargado */
+  .link-cambiar {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-top: 3px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--blue);
+    text-decoration: underline;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .link-cambiar:hover { color: var(--dark); }
+
+  /* Campo fijo / no editable — hora de reporte, tomada literalmente al
+     abrir el formulario. Se ve claramente distinto a un input normal para
+     que quede claro que no se puede tocar. */
+  .campo-fijo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 13px;
+    border: 1.5px dashed var(--border);
+    border-radius: 9px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    background: var(--surface);
+    color: var(--dark);
+  }
+  .campo-fijo .campo-fijo-icono { font-size: 1rem; flex-shrink: 0; }
+
   /* ════════════════════════════════
      CHIPS — TIPO DE REPORTE (v2)
   ════════════════════════════════ */
@@ -457,6 +493,53 @@
   .chip-grid.invalid {
     outline: 2px solid var(--error);
     outline-offset: 5px;
+  }
+
+  /* Categorías de tipo de reporte (v3 — rediseño): chips más grandes, con
+     icono, para que la categoría principal se distinga a simple vista de
+     las subcategorías que aparecen debajo una vez elegida. */
+  .chip-grid.chip-categorias { gap: 10px; }
+  .chip-categoria {
+    border: 1.5px solid var(--border);
+    background: #fafbfd;
+    border-radius: 16px;
+    padding: 12px 10px;
+    min-width: 84px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    flex: 1 1 84px;
+  }
+  .chip-categoria:hover { border-color: var(--blue); }
+  .chip-categoria .cat-icono { font-size: 1.4rem; line-height: 1; }
+  .chip-categoria .cat-etiqueta { font-size: 0.74rem; font-weight: 700; color: var(--text); }
+  .chip-categoria.selected {
+    background: var(--blue);
+    border-color: var(--blue);
+  }
+  .chip-categoria.selected .cat-etiqueta { color: white; }
+
+  .subcat-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--muted);
+    margin: 14px 0 6px;
+  }
+
+  /* Tarjeta de detalle: colapsada hasta que se elige un tipo de reporte —
+     así el asociado no ve subcategorías ni descripción antes de que
+     tengan sentido para lo que está reportando. */
+  #card-detalle-reporte {
+    display: none;
+  }
+  #card-detalle-reporte.mostrar {
+    display: block;
+    animation: slideUp 0.3s ease;
   }
 
   /* ════════════════════════════════
@@ -982,10 +1065,8 @@
     <div class="modal-field">
       <label>No. de Empleado <span>*</span></label>
       <input type="text" id="modal-empleado" list="lista-sugerencias-empleado" placeholder="Ej. 00123456" maxlength="20" autocomplete="off">
-      <datalist id="lista-sugerencias-empleado">
-        <option value="8155457"></option>
-      </datalist>
-      <div class="modal-field-hint">Escribe tu número de asociado. Si el sistema lo reconoce, tu nombre, área y celular se cargarán automáticamente.</div>
+      <datalist id="lista-sugerencias-empleado"></datalist>
+      <div class="modal-field-hint">Escribe tu número de asociado. Si el sistema lo reconoce, tu nombre, área y celular se cargarán automáticamente. Solo se te pedirá una vez en este teléfono.</div>
     </div>
 
     <!-- Selección CEDIS -->
@@ -1051,6 +1132,7 @@
       <div class="asociado-info">
         <div class="asociado-nombre" id="resumen-nombre">Cargando…</div>
         <div class="asociado-meta" id="resumen-meta">—</div>
+        <button type="button" class="link-cambiar" id="btn-cambiar-asociado" onclick="cambiarAsociado()" style="display:none;">¿No eres tú? Cambiar</button>
       </div>
       <button type="button" class="btn-editar" onclick="toggleEdicionAsociado()">✏️ Editar</button>
     </div>
@@ -1067,7 +1149,7 @@
         </div>
       </div>
       <div class="field">
-        <label>Área / Departamento <span class="req">*</span></label>
+        <label>Área <span class="req">*</span></label>
         <select id="area" onchange="actualizarResumenAsociado()">
           <option value="">— Seleccionar —</option>
           <option>RECIBO</option>
@@ -1098,7 +1180,7 @@
       </div>
       <div class="field">
         <label>Turno <span class="req">*</span></label>
-        <select id="turno" onchange="marcarTurnoComoManual()">
+        <select id="turno">
           <option>Matutino (06:00–14:00)</option>
           <option>Vespertino (14:00–22:00)</option>
           <option>Nocturno (22:00–06:00)</option>
@@ -1118,22 +1200,34 @@
         <input type="date" id="fecha">
       </div>
       <div class="field">
-        <label>Hora de abordaje <span class="req">*</span></label>
-        <input type="time" id="hora" onchange="onHoraModificadaManualmente()">
+        <label>Hora de reporte</label>
+        <!-- v3: ya no es editable. Es la hora literal en la que se abrió el
+             formulario (ver inicializarFechaHoraTurno()) — el input real que
+             viaja en el envío queda oculto; lo que se ve es solo lectura. -->
+        <div class="campo-fijo"><span class="campo-fijo-icono">🕐</span><span id="hora-reporte-display">—:—</span></div>
+        <input type="hidden" id="hora">
       </div>
     </div>
-    <div class="hint-auto">📌 Fecha y hora se completan solas — ajústalas si el reporte es de un evento anterior.</div>
+    <div class="hint-auto">📌 La fecha puede ajustarse si el reporte es de un evento anterior. La hora de reporte se registra sola al abrir el formulario y no se puede editar.</div>
 
     <div class="row-2">
       <div class="field">
-        <label>Unidad / Económico</label>
-        <input type="text" id="unidad" placeholder="Ej. T-07 / 4521">
+        <label>LT Transportista</label>
+        <!-- Antes era texto libre para el número económico. Ahora es un
+             catálogo (hoy: TEPER, SELVA MAYA) que administra Fase 11 desde
+             admin — así el reporte queda ligado a una LT real y se puede
+             medir su nivel de servicio. Se recuerda la última elegida en
+             este teléfono (ver actualizarTransportistas()). -->
+        <select id="unidad" onchange="guardarUltimoTransportista()">
+          <option value="">— Seleccionar LT —</option>
+        </select>
       </div>
       <div class="field">
-        <label>Parada / Ruta</label>
+        <label>Ruta</label>
         <!-- Las opciones se llenan por JavaScript según el CeDis elegido en el modal
-             (Perecederos vs SECOS tienen paradas distintas). Ver actualizarParadasSegunCedis(). -->
-        <select id="ruta">
+             (Perecederos vs SECOS tienen paradas distintas). Ver actualizarParadasSegunCedis().
+             Se recuerda la última parada elegida en este teléfono para este CeDis+almacén. -->
+        <select id="ruta" onchange="guardarUltimaParada()">
           <option value="">— Seleccionar parada —</option>
         </select>
       </div>
@@ -1143,43 +1237,25 @@
       <label>Tipo de reporte <span class="req">*</span></label>
       <input type="hidden" id="tipo-reporte">
       <!--
-        DECISIÓN UX (v2): se reemplaza el <select> de 12 opciones por "chips" de toque directo.
-        Un <select> largo exige 3 acciones en móvil (abrir menú, desplazarse, confirmar).
-        Con chips en cuadrícula el asociado ve las opciones más comunes de inmediato y
-        selecciona con 1 solo toque, sin perder espacio gracias al flex-wrap.
+        DECISIÓN UX (v3): antes eran 10 chips planos (3 toques de scroll en
+        pantallas chicas para verlos todos). Ahora son 5 categorías; elegir
+        una despliega abajo, en "Detalle del Reporte", las subcategorías que
+        aplican solo a ese tipo — así nunca se muestran opciones que no
+        tienen sentido para lo que se está reportando. Ver CATEGORIAS_REPORTE.
       -->
-      <div class="chip-grid" id="chip-tipo-reporte">
-        <div class="chip" data-value="Retraso en salida" onclick="seleccionarTipoReporte(this)">Retraso en salida</div>
-        <div class="chip" data-value="Retraso en llegada" onclick="seleccionarTipoReporte(this)">Retraso en llegada</div>
-        <div class="chip" data-value="Unidad en mal estado" onclick="seleccionarTipoReporte(this)">Unidad en mal estado</div>
-        <div class="chip" data-value="No se presentó la unidad" onclick="seleccionarTipoReporte(this)">No se presentó</div>
-        <div class="chip" data-value="Sobrecupo" onclick="seleccionarTipoReporte(this)">Sobrecupo</div>
-        <div class="chip" data-value="Conducta del operador" onclick="seleccionarTipoReporte(this)">Conducta del operador</div>
-        <div class="chip" data-value="Cambio de ruta sin aviso" onclick="seleccionarTipoReporte(this)">Cambio de ruta</div>
-        <div class="chip" data-value="Falta de calefacción / A/C" onclick="seleccionarTipoReporte(this)">Clima (A/C)</div>
-        <div class="chip" data-value="Accidente / Incidente" onclick="seleccionarTipoReporte(this)">Accidente</div>
-        <div class="chip" data-value="Acoso" onclick="seleccionarTipoReporte(this)">Acoso</div>
-        <div class="chip" data-value="Soborno" onclick="seleccionarTipoReporte(this)">Soborno</div>
-        <div class="chip" data-value="Otro" onclick="seleccionarTipoReporte(this)">Otro</div>
-      </div>
+      <div class="chip-grid chip-categorias" id="chip-tipo-reporte"></div>
     </div>
   </div>
 
-  <!-- Detalle del Reporte -->
-  <div class="card card-descripcion">
+  <!-- Detalle del Reporte — oculto hasta elegir un tipo arriba (ver CSS
+       #card-detalle-reporte / JS seleccionarCategoriaReporte). Ya no tiene
+       la lista genérica de "situaciones observadas": las subcategorías de
+       cada tipo cumplen ese papel, específicas a lo que se seleccionó. -->
+  <div class="card card-descripcion" id="card-detalle-reporte">
     <div class="card-title">⚠️ Detalle del Reporte</div>
-    <div class="field">
-      <label>Situaciones observadas</label>
-      <div class="checks">
-        <label class="check-item"><input type="checkbox" name="sit" value="Retraso"> Retraso en servicio</label>
-        <label class="check-item"><input type="checkbox" name="sit" value="Limpieza"> Falta de limpieza</label>
-        <label class="check-item"><input type="checkbox" name="sit" value="Velocidad"> Exceso de velocidad</label>
-        <label class="check-item"><input type="checkbox" name="sit" value="Trato"> Mal trato del operador</label>
-        <label class="check-item"><input type="checkbox" name="sit" value="Mecanico"> Falla mecánica</label>
-        <label class="check-item"><input type="checkbox" name="sit" value="Accidente"> Accidente / Incidente</label>
-        <label class="check-item"><input type="checkbox" name="sit" value="Clima"> A/C o calefacción</label>
-        <label class="check-item"><input type="checkbox" name="sit" value="Otro"> Otro</label>
-      </div>
+    <div class="field" id="campo-subcategoria" style="display:none;">
+      <div class="subcat-label">¿Qué pasó exactamente?</div>
+      <div class="chip-grid" id="chip-subcategoria-reporte"></div>
     </div>
     <!-- DECISIÓN UX (v2): la descripción sigue siendo el corazón del reporte, por eso su
          textarea es más grande y con borde más marcado que el resto de los campos. -->
@@ -1248,6 +1324,7 @@
   const NOMBRE_TABLA_PARADAS   = 'paradas'; // Fase 8
   const NOMBRE_TABLA_CEDIS      = 'cedis';      // Fase 3
   const NOMBRE_TABLA_ALMACENES  = 'almacenes';  // Fase 3
+  const NOMBRE_TABLA_TRANSPORTISTAS = 'transportistas'; // Fase 11
 
   const supabaseClient = (SUPABASE_URL.includes('TU-PROYECTO'))
     ? null // todavía no configurado: la app sigue funcionando, solo sin historial compartido
@@ -1464,7 +1541,28 @@
   }
 
   let cedisSeleccionado = null;          // 'perecederos' | 'secos' — clave dentro de CONFIG_CEDIS.almacenes
-  let turnoModificadoManualmente = false; // evita sobrescribir un turno elegido a mano
+
+  // ── Recordar al asociado en este dispositivo (v3) ──────────────────────
+  // Antes se pedía el número de empleado en cada visita. Ahora, tras la primera
+  // vez, se guarda (numEmpleado + almacén) en este navegador y las siguientes
+  // visitas saltan directo al formulario ya precargado. "¿No eres tú? Cambiar"
+  // en el resumen del asociado borra esto por si el teléfono lo usa alguien más.
+  const CLAVE_SESION_ASOCIADO = 'wm_transporte_sesion_asociado_v1:' + CONFIG_CEDIS.slug;
+
+  function obtenerSesionAsociado() {
+    try { return JSON.parse(localStorage.getItem(CLAVE_SESION_ASOCIADO)); }
+    catch (e) { return null; }
+  }
+
+  function guardarSesionAsociado(numEmpleado, almacen) {
+    try { localStorage.setItem(CLAVE_SESION_ASOCIADO, JSON.stringify({ numEmpleado, almacen })); }
+    catch (e) { console.warn('No se pudo recordar al asociado en este dispositivo:', e); }
+  }
+
+  function olvidarSesionAsociado() {
+    try { localStorage.removeItem(CLAVE_SESION_ASOCIADO); }
+    catch (e) { /* nada que limpiar */ }
+  }
 
   /*
     NOTA (Fase 8 — rutas/paradas dinámicas): las paradas ya no vienen solo del
@@ -1527,6 +1625,28 @@
     }
   }
 
+  // v3.1: se recuerda la última parada elegida en este dispositivo, por
+  // CEDIS+almacén (una parada de Perecederos no aplica a SECOS). El 90% de
+  // las veces es la misma, así que se precarga en vez de pedirla de nuevo —
+  // pero sigue siendo un <select> editable, no una decisión final.
+  const CLAVE_ULTIMA_PARADA = 'wm_transporte_ultima_parada_v1';
+
+  function obtenerUltimaParada(clave) {
+    try { return (JSON.parse(localStorage.getItem(CLAVE_ULTIMA_PARADA)) || {})[clave] || ''; }
+    catch (e) { return ''; }
+  }
+
+  function guardarUltimaParada() {
+    const valor = document.getElementById('ruta').value;
+    if (!valor) return;
+    const clave = CONFIG_CEDIS.slug + ':' + (cedisSeleccionado || 'perecederos');
+    try {
+      const todas = JSON.parse(localStorage.getItem(CLAVE_ULTIMA_PARADA)) || {};
+      todas[clave] = valor;
+      localStorage.setItem(CLAVE_ULTIMA_PARADA, JSON.stringify(todas));
+    } catch (e) { console.warn('No se pudo recordar la última parada:', e); }
+  }
+
   function pintarSelectParadas(rutasConParadas, valorPrevio) {
     const select = document.getElementById('ruta');
     let html = '<option value="">— Seleccionar parada —</option>';
@@ -1546,11 +1666,14 @@
   async function actualizarParadasSegunCedis() {
     const select = document.getElementById('ruta');
     const almacenSlug = cedisSeleccionado || 'perecederos';
-    const valorPrevio = select.value;
+    const claveCache = CONFIG_CEDIS.slug + ':' + almacenSlug;
+    // Si el asociado ya eligió algo en esta sesión de formulario, se respeta;
+    // si no, se ofrece como punto de partida lo último elegido en este
+    // dispositivo para este mismo CEDIS+almacén.
+    const valorPrevio = select.value || obtenerUltimaParada(claveCache);
 
     select.innerHTML = '<option value="">Cargando paradas…</option>';
 
-    const claveCache = CONFIG_CEDIS.slug + ':' + almacenSlug;
     const desdeSupabase = await consultarRutasConParadas(almacenSlug);
 
     if (desdeSupabase) {
@@ -1572,6 +1695,74 @@
     pintarSelectParadas([{ nombre: almacen.nombre, paradas: almacen.paradas }], valorPrevio);
   }
 
+  /* ════════════════════════════════
+     8-B. LT TRANSPORTISTA (Fase 11)
+     Antes era texto libre ("Unidad / Económico"). Ahora es un catálogo que
+     administra Fase 11 desde admin (hoy: TEPER, SELVA MAYA) — mismo patrón de
+     resiliencia que CEDIS/paradas: Supabase primero, caché local si no hay
+     internet, respaldo fijo si nunca hubo ninguna de las dos. Se recuerda la
+     última LT elegida en este dispositivo, igual que la parada.
+  ════════════════════════════════ */
+  const TRANSPORTISTAS_FALLBACK = ['TEPER', 'SELVA MAYA'];
+  const CLAVE_CACHE_TRANSPORTISTAS = 'wm_transporte_transportistas_cache_v1';
+  const CLAVE_ULTIMO_TRANSPORTISTA = 'wm_transporte_ultimo_transportista_v1';
+
+  function obtenerUltimoTransportista() {
+    try { return localStorage.getItem(CLAVE_ULTIMO_TRANSPORTISTA) || ''; }
+    catch (e) { return ''; }
+  }
+
+  function guardarUltimoTransportista() {
+    const valor = document.getElementById('unidad').value;
+    try { localStorage.setItem(CLAVE_ULTIMO_TRANSPORTISTA, valor); }
+    catch (e) { console.warn('No se pudo recordar la última LT:', e); }
+  }
+
+  async function consultarTransportistasDesdeSupabase() {
+    if (!supabaseClient) return null;
+    try {
+      const { data, error } = await supabaseClient
+        .from(NOMBRE_TABLA_TRANSPORTISTAS)
+        .select('nombre')
+        .eq('activo', true)
+        .order('nombre', { ascending: true });
+      if (error) {
+        // Lo más probable: la tabla `transportistas` todavía no existe
+        // (Fase 11 no aplicada en Supabase todavía). No es un error del usuario.
+        console.warn('No se pudo consultar transportistas (¿ya aplicaste el esquema de la Fase 11?):', error);
+        return null;
+      }
+      if (!data || !data.length) return null;
+      return data.map(t => t.nombre);
+    } catch (e) {
+      console.warn('Sin conexión al consultar transportistas:', e);
+      return null;
+    }
+  }
+
+  function pintarSelectTransportistas(lista) {
+    const select = document.getElementById('unidad');
+    const valorPrevio = select.value || obtenerUltimoTransportista();
+    select.innerHTML = '<option value="">— Seleccionar LT —</option>' +
+      lista.map(t => `<option>${t}</option>`).join('');
+    if (lista.includes(valorPrevio)) select.value = valorPrevio;
+  }
+
+  async function actualizarTransportistas() {
+    const desdeSupabase = await consultarTransportistasDesdeSupabase();
+    if (desdeSupabase) {
+      try { localStorage.setItem(CLAVE_CACHE_TRANSPORTISTAS, JSON.stringify(desdeSupabase)); }
+      catch (e) { console.warn('No se pudo cachear la lista de transportistas:', e); }
+      pintarSelectTransportistas(desdeSupabase);
+      return;
+    }
+    try {
+      const cache = JSON.parse(localStorage.getItem(CLAVE_CACHE_TRANSPORTISTAS));
+      if (cache && cache.length) { pintarSelectTransportistas(cache); return; }
+    } catch (e) { /* sigue al respaldo fijo */ }
+    pintarSelectTransportistas(TRANSPORTISTAS_FALLBACK);
+  }
+
   // Catálogo de estatus del historial personal ("Mis Reportes"). El estatus real de
   // cada reporte se actualiza por el equipo de Transporte directamente en la columna
   // `estatus` de la tabla `reportes_transporte` en Supabase; la app solo lo consulta
@@ -1585,11 +1776,12 @@
   const CLAVE_MIS_REPORTES = 'wm_transporte_mis_reportes_v1';
 
   /*
-    NOTA (Fase 1 — modularización): el catálogo de situaciones (SITUACIONES_CATALOGO)
-    se removió de este archivo porque aquí solo se usaba para el filtro y el
-    concentrado del Historial administrativo, que ahora vive en admin.html.
-    El formulario de reporte sigue usando sus checkboxes name="sit" tal cual,
-    sin depender de este catálogo.
+    NOTA (v3): el catálogo de situaciones (SITUACIONES_CATALOGO) vive en
+    admin.html, para el filtro y el concentrado del Historial. El formulario
+    ya no muestra esos checkboxes al asociado — desde esta versión, las
+    subcategorías de "Tipo de reporte" cubren ese papel de forma más
+    específica, y se traducen a "situaciones" por dentro (ver
+    situacionesDesdeTipo) para que el concentrado de admin siga recibiendo datos.
   */
 
   /* ════════════════════════════════
@@ -1601,6 +1793,16 @@
     document.getElementById('card-' + tipo).classList.add('selected');
     document.getElementById('modal-error').style.display = 'none';
     actualizarParadasSegunCedis(); // las paradas disponibles cambian según el CeDis
+  }
+
+  function actualizarBadgeCedis() {
+    const label = cedisSeleccionado === 'perecederos' ? '🥦 Perecederos' : '📦 SECOS';
+    document.getElementById('header-cedis-badge').textContent = label;
+  }
+
+  function mostrarModalBienvenida() {
+    document.getElementById('modal-overlay').classList.add('activo');
+    document.getElementById('modal-empleado').focus();
   }
 
   // Ahora es asíncrona porque la consulta del asociado va contra Supabase (con
@@ -1624,12 +1826,37 @@
     boton.disabled = false;
     boton.textContent = textoOriginal;
 
-    const label = cedisSeleccionado === 'perecederos' ? '🥦 Perecederos' : '📦 SECOS';
-    document.getElementById('header-cedis-badge').textContent = label;
+    actualizarBadgeCedis();
+
+    // v3: se recuerda en este dispositivo para no volver a pedirlo — ver
+    // cambiarAsociado() para la salida manual de esto.
+    guardarSesionAsociado(empModal, cedisSeleccionado);
 
     const overlay = document.getElementById('modal-overlay');
     overlay.classList.add('hiding');
-    setTimeout(() => overlay.style.display = 'none', 300);
+    setTimeout(() => { overlay.classList.remove('activo', 'hiding'); }, 300);
+  }
+
+  // v3: arranca la app directo en el formulario, sin modal, a partir de lo que
+  // ya se recordó en este dispositivo en una visita anterior.
+  async function iniciarAppConSesionGuardada(sesion) {
+    cedisSeleccionado = sesion.almacen;
+    document.getElementById('card-' + sesion.almacen)?.classList.add('selected');
+    actualizarBadgeCedis();
+    actualizarParadasSegunCedis();
+    cargarDatosAsociado(await buscarAsociadoPorNumero(sesion.numEmpleado));
+  }
+
+  // "¿No eres tú? Cambiar" — por si el teléfono lo usa más de un asociado.
+  // Olvida lo guardado y vuelve a mostrar el modal de bienvenida.
+  function cambiarAsociado() {
+    olvidarSesionAsociado();
+    cedisSeleccionado = null;
+    document.getElementById('modal-empleado').value = '';
+    document.querySelectorAll('.cedis-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('modal-error').style.display = 'none';
+    cargarDatosAsociado({ numEmpleado: '', nombre: '', area: '', celular: '', encontrado: true });
+    mostrarModalBienvenida();
   }
 
   /* ════════════════════════════════
@@ -1673,6 +1900,8 @@
     document.getElementById('resumen-nombre').textContent = nombre || 'Captura tus datos';
     document.getElementById('resumen-meta').textContent = nombre ? `No. ${empleado} · ${area}` : `No. ${empleado} · pendiente`;
     document.getElementById('avatar-iniciales').textContent = obtenerIniciales(nombre);
+    // "¿No eres tú?" solo tiene sentido una vez que hay un número de empleado cargado.
+    document.getElementById('btn-cambiar-asociado').style.display = document.getElementById('empleado').value.trim() ? 'block' : 'none';
   }
 
   function obtenerIniciales(nombreCompleto) {
@@ -1696,35 +1925,151 @@
     return 'Nocturno (22:00–06:00)';
   }
 
+  // Solo para mostrar (12h, más fácil de leer en el celular) — el valor real
+  // que viaja con el reporte sigue siendo 24h en el input oculto #hora.
+  function formatearHora12(horaStr) {
+    const [h, m] = horaStr.split(':').map(Number);
+    const periodo = h < 12 ? 'a. m.' : 'p. m.';
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${h12}:${String(m).padStart(2, '0')} ${periodo}`;
+  }
+
+  // v3: la hora ya no la edita el asociado — es la hora literal en la que se
+  // abrió el formulario. Se calcula una sola vez, aquí, al cargar la página.
   function inicializarFechaHoraTurno() {
     const ahora = new Date();
     document.getElementById('fecha').valueAsDate = ahora;
     const horaActual = ahora.toTimeString().slice(0, 5);
     document.getElementById('hora').value = horaActual;
+    document.getElementById('hora-reporte-display').textContent = formatearHora12(horaActual);
     document.getElementById('turno').value = calcularTurno(horaActual);
   }
 
-  // Si el usuario cambia la hora manualmente (p. ej. reporte de un evento anterior),
-  // el turno se recalcula para seguir siendo coherente — salvo que el propio usuario
-  // ya haya elegido un turno distinto a mano, en cuyo caso se respeta su elección.
-  function onHoraModificadaManualmente() {
-    if (!turnoModificadoManualmente) {
-      document.getElementById('turno').value = calcularTurno(document.getElementById('hora').value);
-    }
-  }
-
-  function marcarTurnoComoManual() {
-    turnoModificadoManualmente = true;
-  }
-
   /* ════════════════════════════════
-     5. TIPO DE REPORTE (chips de un toque)
+     5. TIPO DE REPORTE (categorías + subcategorías dinámicas, v3)
+     Antes eran 10 chips planos. Ahora son 5 categorías; elegir una despliega
+     "Detalle del Reporte" con las subcategorías que aplican solo a ese tipo.
+     El valor final que se guarda en tipo_reporte (y viaja igual que antes a
+     Supabase/WhatsApp) es siempre el mismo texto plano de siempre — para
+     categorías con una sola subcategoría real, no se pide un segundo toque.
   ════════════════════════════════ */
-  function seleccionarTipoReporte(el) {
-    document.querySelectorAll('#chip-tipo-reporte .chip').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-    document.getElementById('tipo-reporte').value = el.dataset.value;
+  const CATEGORIAS_REPORTE = [
+    {
+      valor: 'Retraso', icono: '🚍', etiqueta: 'Retraso',
+      subcategorias: [
+        { valor: 'Retraso en salida',    etiqueta: 'Salida tarde' },
+        { valor: 'Retraso en llegada',   etiqueta: 'Llegada tarde' },
+        { valor: 'Bloqueo en el camino', etiqueta: 'Bloqueo / vialidad cerrada' },
+        { valor: 'Accidente de tránsito',etiqueta: 'Accidente de tránsito (en el trayecto)' },
+      ],
+    },
+    {
+      valor: 'Unidad', icono: '🛠️', etiqueta: 'Unidad',
+      subcategorias: [
+        { valor: 'Unidad en mal estado',        etiqueta: 'Mal estado / falla mecánica' },
+        { valor: 'Falta de calefacción / A/C',  etiqueta: 'Sin A/C o calefacción' },
+        { valor: 'Accidente / Incidente',       etiqueta: 'Accidente de la unidad' },
+      ],
+    },
+    {
+      valor: 'Servicio', icono: '📋', etiqueta: 'Servicio',
+      subcategorias: [
+        { valor: 'No se presentó la unidad',      etiqueta: 'No se presentó la unidad' },
+        { valor: 'Sobrecupo',                     etiqueta: 'Sobrecupo' },
+        { valor: 'Cambio de ruta sin aviso',      etiqueta: 'Cambio de ruta sin aviso' },
+      ],
+    },
+    {
+      // NOTA: "Acoso" y "Soborno" se excluyen a propósito — ya existe un área
+      // encargada de esos temas y se manejan por otro canal, no por aquí.
+      valor: 'Operador', icono: '👤', etiqueta: 'Operador',
+      subcategorias: [
+        { valor: 'Operador con sueño',              etiqueta: 'Operador con sueño / fatiga' },
+        { valor: 'Conducta inapropiada del operador', etiqueta: 'Conducta inapropiada' },
+        { valor: 'Exceso de velocidad',             etiqueta: 'Exceso de velocidad' },
+        // Se agrega también "conducción brusca/imprudente" (frenados o
+        // rebases bruscos) — es una queja frecuente de transporte de personal
+        // y distinta de "exceso de velocidad" (puede ir despacio y aun así
+        // manejar de forma brusca). Quítala si no aplica.
+        { valor: 'Conducción imprudente',           etiqueta: 'Conducción brusca / imprudente' },
+      ],
+    },
+    {
+      valor: 'Otro', icono: '❓', etiqueta: 'Otro',
+      subcategorias: [],
+    },
+  ];
+
+  // Traduce el tipo de reporte final a "situaciones" (el mismo catálogo que ya
+  // usa admin.html para el concentrado por situación), sin pedirle al asociado
+  // un paso extra — así ese reporte estadístico sigue recibiendo datos.
+  const SITUACION_POR_TIPO = {
+    'Retraso en salida': ['Retraso'],
+    'Retraso en llegada': ['Retraso'],
+    'Bloqueo en el camino': ['Retraso'],
+    'Accidente de tránsito': ['Accidente'],
+    'Unidad en mal estado': ['Mecanico'],
+    'Falta de calefacción / A/C': ['Clima'],
+    'Accidente / Incidente': ['Accidente'],
+    'No se presentó la unidad': ['Otro'],
+    'Sobrecupo': ['Otro'],
+    'Cambio de ruta sin aviso': ['Otro'],
+    'Operador con sueño': ['Otro'],
+    'Conducta inapropiada del operador': ['Trato'],
+    'Exceso de velocidad': ['Velocidad'],
+    'Conducción imprudente': ['Velocidad'],
+    'Otro': ['Otro'],
+  };
+
+  let categoriaReporteActual = null;
+
+  function pintarCategoriasReporte() {
+    const cont = document.getElementById('chip-tipo-reporte');
+    cont.innerHTML = CATEGORIAS_REPORTE.map(c => `
+      <div class="chip-categoria" data-valor="${c.valor}" onclick="seleccionarCategoriaReporte('${c.valor}')">
+        <span class="cat-icono">${c.icono}</span>
+        <span class="cat-etiqueta">${c.etiqueta}</span>
+      </div>
+    `).join('');
+  }
+
+  function seleccionarCategoriaReporte(valor) {
+    const categoria = CATEGORIAS_REPORTE.find(c => c.valor === valor);
+    if (!categoria) return;
+    categoriaReporteActual = categoria;
+
+    document.querySelectorAll('#chip-tipo-reporte .chip-categoria').forEach(c =>
+      c.classList.toggle('selected', c.dataset.valor === valor)
+    );
     document.getElementById('chip-tipo-reporte').classList.remove('invalid');
+
+    const campoSubcat = document.getElementById('campo-subcategoria');
+    const gridSubcat = document.getElementById('chip-subcategoria-reporte');
+
+    if (categoria.subcategorias.length) {
+      // Requiere un segundo toque: el tipo final queda vacío hasta elegir subcategoría.
+      document.getElementById('tipo-reporte').value = '';
+      gridSubcat.innerHTML = categoria.subcategorias.map(s => `
+        <div class="chip" data-valor="${s.valor}" onclick="seleccionarSubcategoriaReporte('${s.valor}')">${s.etiqueta}</div>
+      `).join('');
+      campoSubcat.style.display = 'block';
+    } else {
+      // Categoría de una sola idea: se fija de una vez, sin pedir un paso extra.
+      campoSubcat.style.display = 'none';
+      gridSubcat.innerHTML = '';
+      document.getElementById('tipo-reporte').value = categoria.valor;
+    }
+
+    const card = document.getElementById('card-detalle-reporte');
+    card.classList.add('mostrar');
+    setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  }
+
+  function seleccionarSubcategoriaReporte(valor) {
+    document.querySelectorAll('#chip-subcategoria-reporte .chip').forEach(c =>
+      c.classList.toggle('selected', c.dataset.valor === valor)
+    );
+    document.getElementById('tipo-reporte').value = valor;
   }
 
   /* ════════════════════════════════
@@ -1763,11 +2108,20 @@
       else el.style.borderColor = '';
     });
 
-    // Tipo de reporte: validado sobre el input oculto, resaltando la cuadrícula de chips
+    // Tipo de reporte: validado sobre el input oculto. Si ya se eligió una
+    // categoría con subcategorías pero falta el segundo toque, se resalta la
+    // cuadrícula de subcategorías en vez de la de categorías (es ahí donde
+    // falta el toque).
     const tipoReporte = document.getElementById('tipo-reporte').value;
-    const chipGrid = document.getElementById('chip-tipo-reporte');
-    if (!tipoReporte) { chipGrid.classList.add('invalid'); valido = false; }
-    else chipGrid.classList.remove('invalid');
+    const chipGridCategorias = document.getElementById('chip-tipo-reporte');
+    const chipGridSubcat = document.getElementById('chip-subcategoria-reporte');
+    chipGridCategorias.classList.remove('invalid');
+    chipGridSubcat.classList.remove('invalid');
+    if (!tipoReporte) {
+      valido = false;
+      if (categoriaReporteActual && categoriaReporteActual.subcategorias.length) chipGridSubcat.classList.add('invalid');
+      else chipGridCategorias.classList.add('invalid');
+    }
 
     if (!valido) {
       alert('Por favor completa todos los campos obligatorios (*)');
@@ -1780,11 +2134,11 @@
       return null;
     }
 
-    // Se guarda como ARREGLO (no texto unido con comas): así el filtro del historial
-    // y los futuros concentrados por situación pueden hacer conteos exactos, sin
-    // depender de coincidencias de texto que podrían fallar o duplicarse.
-    const situaciones = [...document.querySelectorAll('input[name="sit"]:checked')]
-                          .map(c => c.value);
+    // v3: ya no hay checkboxes de "situaciones observadas" — se derivan solas
+    // del tipo de reporte elegido (ver SITUACION_POR_TIPO), para que el
+    // concentrado por situación de admin.html siga recibiendo datos sin
+    // pedirle al asociado un paso extra.
+    const situaciones = SITUACION_POR_TIPO[tipoReporte] || [];
 
     return {
       // El FOLIO se genera aquí mismo, en el dispositivo, para poder rastrear ESTE
@@ -1829,8 +2183,8 @@
       '📱 *Celular:* ' + datos.celular + '\n' +
       '🏭 *Área:* ' + datos.area + '\n' +
       '⏰ *Turno:* ' + datos.turno + '\n' +
-      '📅 *Fecha:* ' + datos.fecha + '   🕐 *Hora:* ' + datos.hora + '\n' +
-      '🚌 *Unidad:* ' + datos.unidad + '\n' +
+      '📅 *Fecha:* ' + datos.fecha + '   🕐 *Hora de reporte:* ' + datos.hora + '\n' +
+      '🚌 *LT Transportista:* ' + datos.unidad + '\n' +
       '🗺️ *Ruta / Parada:* ' + datos.ruta + '\n' +
       '━━━━━━━━━━━━━━━━━━━━\n' +
       '⚠️ *Tipo de Reporte:* ' + datos.tipo_reporte + '\n' +
@@ -1947,13 +2301,13 @@
 
     // Refresca el estatus y el mensaje de seguimiento reales desde Supabase (si hay
     // conexión); si no, se muestra el último dato conocido guardado localmente.
-    // Fase 10: ya no se hace SELECT directo sobre `reportes_transporte` (esa
-    // tabla no tiene política de lectura para el rol anónimo). Se usa una
-    // función controlada que solo devuelve estatus/comentario de los folios
-    // que este dispositivo ya conoce — nunca la tabla completa.
     let infoPorFolio = {};
     if (supabaseClient) {
       try {
+        // Fase 10: ya no se hace SELECT directo sobre `reportes_transporte`
+        // (esa tabla no tiene política de lectura para el rol anónimo). Se
+        // usa una función controlada que solo devuelve estatus/comentario de
+        // los folios que este dispositivo ya conoce — nunca la tabla completa.
         const folios = locales.map(r => r.folio).filter(Boolean);
         const { data, error } = await supabaseClient
           .rpc('f_obtener_estatus_reportes', { p_folios: folios });
@@ -2013,11 +2367,21 @@
     // CONFIG_CEDIS, resuelto arriba a partir de la URL (o del piloto por defecto).
     document.getElementById('header-cedis-nombre').textContent = CONFIG_CEDIS.nombre;
 
-    // El formulario inicia vacío (ya no hay número de empleado precargado): se llena
-    // hasta que el asociado captura su número y cierra el modal de bienvenida.
-    cargarDatosAsociado({ numEmpleado: '', nombre: '', area: '', celular: '', encontrado: true });
-    actualizarParadasSegunCedis(); // paradas de "Perecederos" por defecto hasta elegir CeDis
+    pintarCategoriasReporte();
     inicializarFechaHoraTurno();
+    actualizarParadasSegunCedis(); // paradas de "Perecederos" por defecto hasta que se resuelva el almacén
+    actualizarTransportistas(); // catálogo de LT — no depende del almacén elegido
+
+    // v3: si ya se recordó al asociado en este dispositivo, se salta el modal
+    // por completo y se entra directo al formulario ya precargado; si no,
+    // se pide una sola vez y queda recordado para la próxima visita.
+    const sesion = obtenerSesionAsociado();
+    if (sesion && sesion.numEmpleado && sesion.almacen) {
+      iniciarAppConSesionGuardada(sesion);
+    } else {
+      cargarDatosAsociado({ numEmpleado: '', nombre: '', area: '', celular: '', encontrado: true });
+      mostrarModalBienvenida();
+    }
 
     // Al abrir la app (con internet), intenta reenviar en silencio cualquier reporte
     // que se haya quedado pendiente por falta de conexión en una sesión anterior.
