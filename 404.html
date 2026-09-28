@@ -1027,25 +1027,6 @@
 </head>
 <body>
 
-<!-- ══════════════════════════════════
-     PANTALLA: CEDIS NO ENCONTRADO (Fase 4)
-     Se muestra en vez de toda la app cuando la URL trae /cedis/{slug}/ y ese
-     slug no existe en DIRECTORIO_CEDIS. Evita cargar silenciosamente el CEDIS
-     equivocado (o el piloto por defecto) cuando alguien llega por un QR o link
-     mal escrito.
-══════════════════════════════════ -->
-<div id="pantalla-cedis-no-encontrado" style="display:none; min-height:100vh; align-items:center; justify-content:center; padding:24px; text-align:center;">
-  <div>
-    <div style="font-size:3rem; margin-bottom:10px;">⚠️</div>
-    <h2 style="color:#003087; margin-bottom:8px;">CEDIS no encontrado</h2>
-    <p style="color:#64748b; font-size:0.9rem; max-width:340px;">
-      El enlace que abriste (<code id="slug-no-encontrado"></code>) no corresponde a
-      ningún CEDIS registrado. Verifica el QR o el link, o contacta a tu equipo de
-      Transporte.
-    </p>
-  </div>
-</div>
-
 <div id="app-contenido">
 
 <!-- ══════════════════════════════════
@@ -1121,12 +1102,6 @@
   <div class="card">
     <div class="card-title">👤 Datos del Asociado</div>
 
-    <!--
-      DECISIÓN UX (v2): en lugar de 4 campos siempre visibles, se muestra un resumen
-      compacto (nombre, número, área) que llega precargado — hoy desde datos simulados,
-      a futuro desde la base de datos real de asociados. El asociado solo necesita tocar
-      "Editar" si algo está mal, en vez de volver a escribir datos que el sistema ya conoce.
-    -->
     <div class="asociado-resumen" id="asociado-resumen">
       <div class="avatar" id="avatar-iniciales">—</div>
       <div class="asociado-info">
@@ -1201,9 +1176,6 @@
       </div>
       <div class="field">
         <label>Hora de reporte</label>
-        <!-- v3: ya no es editable. Es la hora literal en la que se abrió el
-             formulario (ver inicializarFechaHoraTurno()) — el input real que
-             viaja en el envío queda oculto; lo que se ve es solo lectura. -->
         <div class="campo-fijo"><span class="campo-fijo-icono">🕐</span><span id="hora-reporte-display">—:—</span></div>
         <input type="hidden" id="hora">
       </div>
@@ -1213,20 +1185,12 @@
     <div class="row-2">
       <div class="field">
         <label>LT Transportista</label>
-        <!-- Antes era texto libre para el número económico. Ahora es un
-             catálogo (hoy: TEPER, SELVA MAYA) que administra Fase 11 desde
-             admin — así el reporte queda ligado a una LT real y se puede
-             medir su nivel de servicio. Se recuerda la última elegida en
-             este teléfono (ver actualizarTransportistas()). -->
         <select id="unidad" onchange="guardarUltimoTransportista()">
           <option value="">— Seleccionar LT —</option>
         </select>
       </div>
       <div class="field">
         <label>Ruta</label>
-        <!-- Las opciones se llenan por JavaScript según el CeDis elegido en el modal
-             (Perecederos vs SECOS tienen paradas distintas). Ver actualizarParadasSegunCedis().
-             Se recuerda la última parada elegida en este teléfono para este CeDis+almacén. -->
         <select id="ruta" onchange="guardarUltimaParada()">
           <option value="">— Seleccionar parada —</option>
         </select>
@@ -1236,29 +1200,16 @@
     <div class="field">
       <label>Tipo de reporte <span class="req">*</span></label>
       <input type="hidden" id="tipo-reporte">
-      <!--
-        DECISIÓN UX (v3): antes eran 10 chips planos (3 toques de scroll en
-        pantallas chicas para verlos todos). Ahora son 5 categorías; elegir
-        una despliega abajo, en "Detalle del Reporte", las subcategorías que
-        aplican solo a ese tipo — así nunca se muestran opciones que no
-        tienen sentido para lo que se está reportando. Ver CATEGORIAS_REPORTE.
-      -->
       <div class="chip-grid chip-categorias" id="chip-tipo-reporte"></div>
     </div>
   </div>
 
-  <!-- Detalle del Reporte — oculto hasta elegir un tipo arriba (ver CSS
-       #card-detalle-reporte / JS seleccionarCategoriaReporte). Ya no tiene
-       la lista genérica de "situaciones observadas": las subcategorías de
-       cada tipo cumplen ese papel, específicas a lo que se seleccionó. -->
   <div class="card card-descripcion" id="card-detalle-reporte">
     <div class="card-title">⚠️ Detalle del Reporte</div>
     <div class="field" id="campo-subcategoria" style="display:none;">
       <div class="subcat-label">¿Qué pasó exactamente?</div>
       <div class="chip-grid" id="chip-subcategoria-reporte"></div>
     </div>
-    <!-- DECISIÓN UX (v2): la descripción sigue siendo el corazón del reporte, por eso su
-         textarea es más grande y con borde más marcado que el resto de los campos. -->
     <div class="field">
       <label>Descripción detallada <span class="req">*</span></label>
       <textarea id="descripcion" maxlength="600" oninput="actualizarContador()" placeholder="Describe con detalle lo que ocurrió: hora exacta, lugar, personas involucradas, etc."></textarea>
@@ -1266,7 +1217,6 @@
     </div>
   </div>
 
-  <!-- Botón único de WhatsApp -->
   <button class="btn-whatsapp" onclick="enviarWhatsApp()">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
     Enviar Reporte por WhatsApp
@@ -1275,11 +1225,6 @@
 
 </div>
 
-
-
-<!-- ══════════════════════════════════
-     PANEL MIS REPORTES — histórico local, único por asociado/dispositivo
-══════════════════════════════════ -->
 <div class="panel" id="panel-misreportes">
   <div class="card">
     <div class="card-title">🧾 Mis Reportes</div>
@@ -1293,180 +1238,77 @@
 </div>
 
 </div>
-<!-- fin de #app-contenido -->
 
-<!-- ══════════════════════════════════
-     JAVASCRIPT
-══════════════════════════════════ -->
 <script>
-  /* ════════════════════════════════
-     1. CONFIGURACIÓN Y "BASE DE DATOS" SIMULADA
-     Todo lo que en el futuro vendrá de un backend real vive aislado aquí,
-     para que sustituirlo por llamadas reales sea un cambio de una sola pieza.
-  ════════════════════════════════ */
-  // ── Conexión a Supabase ──────────────────────────────────────────────
-  // Reemplaza estos dos valores con los de TU proyecto de Supabase:
-  //   Panel de Supabase → Project Settings → API
-  //     - "Project URL"      → SUPABASE_URL
-  //     - "anon public" key  → SUPABASE_ANON_KEY
-  // La anon key es pública por diseño (viaja en el navegador de todos los asociados);
-  // la seguridad real la dan las políticas de Row Level Security (RLS) definidas
-  // en la tabla, no el secreto de esta llave. Ver el script SQL entregado aparte.
-  //
-  // NOTA (Fase 3 — cierre): esta conexión se movió arriba de lo que antes era
-  // su lugar porque ahora el directorio de CEDIS (más abajo) también la
-  // necesita, para refrescarse en segundo plano desde la tabla `cedis`.
   const SUPABASE_URL      = 'https://dxixxpyfpenubyefztvz.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4aXh4cHlmcGVudWJ5ZWZ6dHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwMDk1OTEsImV4cCI6MjEwNDU4NTU5MX0.BgbFPeXqmxlmNm1ADr9qw9W92wFk_cPfPEMyYwqVCJ4';
   const NOMBRE_TABLA           = 'reportes_transporte';
   const NOMBRE_TABLA_ASOCIADOS = 'asociados';
-  const NOMBRE_TABLA_RUTAS     = 'rutas';   // Fase 8
-  const NOMBRE_TABLA_PARADAS   = 'paradas'; // Fase 8
-  const NOMBRE_TABLA_CEDIS      = 'cedis';      // Fase 3
-  const NOMBRE_TABLA_ALMACENES  = 'almacenes';  // Fase 3
-  const NOMBRE_TABLA_TRANSPORTISTAS = 'transportistas'; // Fase 11
+  const NOMBRE_TABLA_RUTAS     = 'rutas';
+  const NOMBRE_TABLA_PARADAS   = 'paradas';
+  const NOMBRE_TABLA_ALMACENES  = 'almacenes';
+  const NOMBRE_TABLA_TRANSPORTISTAS = 'transportistas';
 
   const supabaseClient = (SUPABASE_URL.includes('TU-PROYECTO'))
-    ? null // todavía no configurado: la app sigue funcionando, solo sin historial compartido
+    ? null
     : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   /*
-    NOTA (Fase 3 — cierre): DIRECTORIO_CEDIS_FALLBACK es exactamente lo que
-    antes se llamaba DIRECTORIO_CEDIS — el objeto escrito a mano. Ya no es la
-    fuente principal: ahora es el respaldo de última instancia (Supabase caído,
-    tabla `cedis` sin crear todavía, o el primer uso de la app en un
-    dispositivo nuevo sin caché). El resto del código sigue leyendo de
-    DIRECTORIO_CEDIS (sin sufijo) — ver cómo se resuelve más abajo.
+    ÚNICO CEDIS (Villahermosa) con sus dos naves — Perecederos y SECOS.
+    Ya no hay soporte para agregar otros CEDIS: esta constante reemplaza al
+    antiguo "directorio" multi-CEDIS que se consultaba dinámicamente contra
+    Supabase. El WhatsApp de cada almacén sigue siendo editable desde el
+    panel admin (tabla `almacenes`) — ver actualizarWhatsappDesdeSupabase().
   */
-  const DIRECTORIO_CEDIS_FALLBACK = {
-    villahermosa: {
-      nombre: 'CEDIS Walmart Villahermosa',
-      codigo: 'VSA',
-      ciudad: 'Villahermosa',
-      slug: 'villahermosa',
-      almacenes: {
-        perecederos: {
-          nombre: 'Perecederos',
-          whatsapp: '529931365046', // +52 993 136 5046
-          paradas: [
-            'UNIVERSIDAD', 'JOLOCHEROS', 'BUENA VISTA', 'TAMULTE - LIBRAMIENTO',
-            'SOYATACO - NICOLÁS BRAVO', 'GALEANA - AYAPA', 'CAÑALES - CENTRO',
-            'TULIPÁN', "UPCH - SAM'S", 'CUNDUACÁN',
-          ],
-        },
-        secos: {
-          nombre: 'SECOS',
-          whatsapp: '529931004567', // +52 993 100 4567
-          paradas: [
-            'BUENAVISTA', 'UNIVERSIDAD', 'CUNDUACÁN', 'JALPA - NACAJUCA', 'SOYATACO',
-            'NICOLÁS BRAVO', 'AYAPA - GALEANA', 'SAN FERNANDO', 'CÁRDENAS CENTRO',
-            'TULIPÁN', 'CAÑALES',
-          ],
-        },
+  const CONFIG_CEDIS = {
+    nombre: 'CEDIS Walmart Villahermosa',
+    codigo: 'VSA',
+    ciudad: 'Villahermosa',
+    slug: 'villahermosa',
+    almacenes: {
+      perecederos: {
+        nombre: 'Perecederos',
+        whatsapp: '529931365046',
+        paradas: [
+          'UNIVERSIDAD', 'JOLOCHEROS', 'BUENA VISTA', 'TAMULTE - LIBRAMIENTO',
+          'SOYATACO - NICOLÁS BRAVO', 'GALEANA - AYAPA', 'CAÑALES - CENTRO',
+          'TULIPÁN', "UPCH - SAM'S", 'CUNDUACÁN',
+        ],
+      },
+      secos: {
+        nombre: 'SECOS',
+        whatsapp: '529931004567',
+        paradas: [
+          'BUENAVISTA', 'UNIVERSIDAD', 'CUNDUACÁN', 'JALPA - NACAJUCA', 'SOYATACO',
+          'NICOLÁS BRAVO', 'AYAPA - GALEANA', 'SAN FERNANDO', 'CÁRDENAS CENTRO',
+          'TULIPÁN', 'CAÑALES',
+        ],
       },
     },
-    // Cuando exista un segundo CEDIS real en la tabla `cedis`, no hace falta
-    // tocar este objeto — aparece solo en cuanto Supabase responda. Esta
-    // entrada de respaldo solo importa para el primer uso sin caché.
   };
 
-  const CLAVE_CACHE_DIRECTORIO_CEDIS = 'wm_transporte_directorio_cedis_cache_v1';
-
-  function obtenerDirectorioCedisCacheado() {
-    try { return JSON.parse(localStorage.getItem(CLAVE_CACHE_DIRECTORIO_CEDIS)); }
-    catch (e) { return null; }
-  }
-
-  function guardarDirectorioCedisEnCache(directorio) {
-    try { localStorage.setItem(CLAVE_CACHE_DIRECTORIO_CEDIS, JSON.stringify(directorio)); }
-    catch (e) { console.warn('No se pudo cachear el directorio de CEDIS:', e); }
-  }
-
-  // Construye el directorio (misma forma que DIRECTORIO_CEDIS_FALLBACK) a
-  // partir de las tablas `cedis` + `almacenes` de Supabase. Las paradas no
-  // viajan aquí — esas ya se resuelven aparte, por rutas (Fase 8).
-  async function consultarDirectorioCedisDesdeSupabase() {
-    if (!supabaseClient) return null;
+  // Refresca solo los números de WhatsApp de los dos almacenes de Villahermosa
+  // desde Supabase (lo que el admin edita en el panel de QR). Sin directorio
+  // multi-CEDIS de por medio: consulta directa filtrada a un único cedis_slug.
+  async function actualizarWhatsappDesdeSupabase() {
+    if (!supabaseClient) return;
     try {
       const { data, error } = await supabaseClient
-        .from(NOMBRE_TABLA_CEDIS)
-        .select('slug, nombre, codigo, ciudad, ' + NOMBRE_TABLA_ALMACENES + '(slug, nombre, whatsapp, activo)')
-        .eq('activo', true);
-
-      if (error) {
-        // Lo más probable: la tabla `cedis` todavía no existe (Fase 3 no
-        // aplicada en Supabase todavía). No es un error del usuario.
-        console.warn('No se pudo consultar la tabla cedis (¿ya aplicaste el esquema de la Fase 3?):', error);
-        return null;
-      }
-      if (!data || !data.length) return null;
-
-      const directorio = {};
-      data.forEach(c => {
-        const almacenes = {};
-        (c[NOMBRE_TABLA_ALMACENES] || []).filter(a => a.activo !== false).forEach(a => {
-          almacenes[a.slug] = { nombre: a.nombre, whatsapp: a.whatsapp, paradas: [] };
-        });
-        directorio[c.slug] = { nombre: c.nombre, codigo: c.codigo, ciudad: c.ciudad, slug: c.slug, almacenes };
+        .from(NOMBRE_TABLA_ALMACENES)
+        .select('slug, whatsapp, activo')
+        .eq('cedis_slug', CONFIG_CEDIS.slug);
+      if (error || !data) return;
+      data.forEach(a => {
+        if (CONFIG_CEDIS.almacenes[a.slug] && a.activo !== false && a.whatsapp) {
+          CONFIG_CEDIS.almacenes[a.slug].whatsapp = a.whatsapp;
+        }
       });
-      return directorio;
     } catch (e) {
-      console.warn('Sin conexión al consultar el directorio de CEDIS:', e);
-      return null;
+      console.warn('Sin conexión al refrescar los números de WhatsApp:', e);
     }
   }
+  actualizarWhatsappDesdeSupabase();
 
-  /*
-    NOTA (Fase 3 — cierre): esto es lo que hace que la app use "configuración
-    dinámica" de verdad, sin arriesgar nada de lo que ya funciona. DIRECTORIO_CEDIS
-    se resuelve de forma SÍNCRONA, igual que siempre, así que resolverCedisDesdeURL()
-    (Fase 4) sigue funcionando instantáneo, sin pantallas de carga:
-
-      1) Si hay una copia en caché (de una visita anterior a esta app), se usa
-         de inmediato — tan rápido como el respaldo fijo.
-      2) Si no hay caché (primer uso en este dispositivo, o nunca hubo
-         conexión), se usa DIRECTORIO_CEDIS_FALLBACK.
-
-    En paralelo, sin bloquear nada de lo anterior, se dispara una consulta a
-    Supabase para refrescar la caché. La sesión actual nunca cambia a media
-    carga — la próxima vez que se abra la app, ya ve los CEDIS actualizados.
-  */
-  const DIRECTORIO_CEDIS = obtenerDirectorioCedisCacheado() || DIRECTORIO_CEDIS_FALLBACK;
-
-  consultarDirectorioCedisDesdeSupabase().then(directorio => {
-    if (directorio) guardarDirectorioCedisEnCache(directorio);
-  });
-
-  const CEDIS_POR_DEFECTO = 'villahermosa'; // usado si la URL no trae /cedis/{slug}/
-
-  // Lee la URL actual y decide qué CEDIS mostrar. Si la ruta incluye
-  // "/cedis/{slug}/" se usa ese slug; si no lo trae (ej. se entró por /app/
-  // directamente), se usa el CEDIS piloto por defecto. Si el slug viene en la
-  // URL pero no existe en el directorio, se marca como "no encontrado" para
-  // mostrar un error claro en vez de cargar silenciosamente el CEDIS equivocado.
-  function resolverCedisDesdeURL() {
-    const match = window.location.pathname.match(/\/cedis\/([a-z0-9-]+)\/?/i);
-    if (!match) return { config: DIRECTORIO_CEDIS[CEDIS_POR_DEFECTO], encontrado: true, slugBuscado: null };
-
-    const slug = match[1].toLowerCase();
-    const config = DIRECTORIO_CEDIS[slug];
-    return config
-      ? { config, encontrado: true, slugBuscado: slug }
-      : { config: null, encontrado: false, slugBuscado: slug };
-  }
-
-  const RESULTADO_CEDIS = resolverCedisDesdeURL();
-  const CONFIG_CEDIS = RESULTADO_CEDIS.config || DIRECTORIO_CEDIS[CEDIS_POR_DEFECTO];
-
-  // ── Base de datos real de asociados (tabla `asociados` en Supabase) ────────────
-  // NUMERO DE ASOCIADO, NOMBRE y AREA se precargan desde el script SQL entregado
-  // aparte (supabase_setup.sql). CELULAR nace vacío y se completa solo, la primera
-  // vez que ese asociado envía un reporte (ver guardarAsociadoDesdeReporte), quedando
-  // disponible para todas las sesiones y dispositivos futuros.
-  //
-  // Además de consultar Supabase, se mantiene una caché local (localStorage) de los
-  // asociados ya consultados: si el dispositivo se queda sin internet, el formulario
-  // igual puede precargarse con el último dato conocido de ese número.
   const CLAVE_CACHE_ASOCIADOS = 'wm_transporte_asociados_cache_v1';
 
   function obtenerCacheAsociados() {
@@ -1481,20 +1323,12 @@
     catch (e) { console.warn('No se pudo actualizar la caché local de asociados:', e); }
   }
 
-  // Consulta el número de asociado primero en Supabase (fuente de verdad, compartida
-  // por todos) y, si no hay internet o falla la consulta, cae de vuelta a la caché
-  // local del dispositivo. Si no se encuentra en ningún lado, se devuelve "vacío"
-  // para que el asociado capture sus datos manualmente en el formulario.
   async function buscarAsociadoPorNumero(numEmpleado) {
     numEmpleado = (numEmpleado || '').trim();
     if (!numEmpleado) return { numEmpleado, nombre: '', area: '', celular: '', encontrado: false };
 
     if (supabaseClient) {
       try {
-        // Fase 10: ya no se hace SELECT directo sobre `asociados` (esa tabla
-        // no tiene ninguna política para el rol anónimo). Se usa una función
-        // controlada que solo devuelve el registro de ESTE número, nunca la
-        // tabla completa.
         const { data, error } = await supabaseClient
           .rpc('f_buscar_asociado', { p_numero: numEmpleado });
         const registro = Array.isArray(data) ? data[0] : data;
@@ -1514,19 +1348,10 @@
     return { numEmpleado, nombre: '', area: '', celular: '', encontrado: false };
   }
 
-  // Guarda (o actualiza) al asociado en Supabase justo después de que envía un
-  // reporte: así el CELULAR (y cualquier corrección de nombre/área que haya hecho
-  // a mano) queda disponible para la próxima vez, desde cualquier dispositivo.
-  // No bloquea ni retrasa el envío del reporte por WhatsApp.
   async function guardarAsociadoDesdeReporte(datos) {
     actualizarCacheAsociado(datos.num_empleado, { nombre: datos.nombre, area: datos.area, celular: datos.celular });
     if (!supabaseClient || !datos.num_empleado) return;
     try {
-      // Fase 10: ya no se hace upsert directo sobre `asociados` (esa tabla no
-      // tiene ninguna política de escritura para el rol anónimo). La función
-      // f_guardar_asociado_desde_reporte() crea el registro si es nuevo, pero
-      // si el número YA existía solo actualiza el celular — nunca sobrescribe
-      // un nombre/área que el equipo de Transporte ya haya cargado a mano.
       const { error } = await supabaseClient.rpc('f_guardar_asociado_desde_reporte', {
         p_numero: datos.num_empleado,
         p_nombre: datos.nombre,
@@ -1540,13 +1365,8 @@
     }
   }
 
-  let cedisSeleccionado = null;          // 'perecederos' | 'secos' — clave dentro de CONFIG_CEDIS.almacenes
+  let cedisSeleccionado = null;
 
-  // ── Recordar al asociado en este dispositivo (v3) ──────────────────────
-  // Antes se pedía el número de empleado en cada visita. Ahora, tras la primera
-  // vez, se guarda (numEmpleado + almacén) en este navegador y las siguientes
-  // visitas saltan directo al formulario ya precargado. "¿No eres tú? Cambiar"
-  // en el resumen del asociado borra esto por si el teléfono lo usa alguien más.
   const CLAVE_SESION_ASOCIADO = 'wm_transporte_sesion_asociado_v1:' + CONFIG_CEDIS.slug;
 
   function obtenerSesionAsociado() {
@@ -1564,18 +1384,6 @@
     catch (e) { /* nada que limpiar */ }
   }
 
-  /*
-    NOTA (Fase 8 — rutas/paradas dinámicas): las paradas ya no vienen solo del
-    array fijo en CONFIG_CEDIS.almacenes[x].paradas — ese array se conserva
-    como RESPALDO (si Supabase no está configurado, si las tablas `rutas`/
-    `paradas` todavía no existen, o si la consulta falla por cualquier razón),
-    pero la fuente real ahora es Supabase, agrupada por ruta. Esto introduce
-    una espera de red que antes no existía: el <select> muestra "Cargando…"
-    mientras resuelve, en vez de llenarse instantáneo como antes.
-
-    Se cachea en localStorage por (cedis, almacén) para que, sin internet, se
-    use la última lista conocida en vez de caer directo al respaldo fijo.
-  */
   const CLAVE_CACHE_PARADAS = 'wm_transporte_paradas_cache_v1';
 
   function obtenerCacheParadas() {
@@ -1590,9 +1398,6 @@
     catch (e) { console.warn('No se pudo cachear las paradas:', e); }
   }
 
-  // Devuelve [{ nombre: 'Ruta general', paradas: ['UNIVERSIDAD', ...] }, ...]
-  // consultando Supabase, o null si no se pudo (Supabase no configurado, tablas
-  // inexistentes, o sin conexión).
   async function consultarRutasConParadas(almacenSlug) {
     if (!supabaseClient) return null;
     try {
@@ -1605,9 +1410,7 @@
         .order('orden', { ascending: true });
 
       if (error) {
-        // Lo más probable: las tablas rutas/paradas todavía no existen (Fase 8
-        // no aplicada en Supabase todavía). No es un error del usuario.
-        console.warn('No se pudieron consultar rutas/paradas (¿ya aplicaste el esquema de la Fase 8?):', error);
+        console.warn('No se pudieron consultar rutas/paradas:', error);
         return null;
       }
       if (!data || !data.length) return null;
@@ -1625,10 +1428,6 @@
     }
   }
 
-  // v3.1: se recuerda la última parada elegida en este dispositivo, por
-  // CEDIS+almacén (una parada de Perecederos no aplica a SECOS). El 90% de
-  // las veces es la misma, así que se precarga en vez de pedirla de nuevo —
-  // pero sigue siendo un <select> editable, no una decisión final.
   const CLAVE_ULTIMA_PARADA = 'wm_transporte_ultima_parada_v1';
 
   function obtenerUltimaParada(clave) {
@@ -1667,9 +1466,6 @@
     const select = document.getElementById('ruta');
     const almacenSlug = cedisSeleccionado || 'perecederos';
     const claveCache = CONFIG_CEDIS.slug + ':' + almacenSlug;
-    // Si el asociado ya eligió algo en esta sesión de formulario, se respeta;
-    // si no, se ofrece como punto de partida lo último elegido en este
-    // dispositivo para este mismo CEDIS+almacén.
     const valorPrevio = select.value || obtenerUltimaParada(claveCache);
 
     select.innerHTML = '<option value="">Cargando paradas…</option>';
@@ -1688,21 +1484,10 @@
       return;
     }
 
-    // Último respaldo: el array fijo de siempre, sin agrupar por ruta (porque
-    // el código nunca supo agruparlo — es exactamente el comportamiento previo
-    // a la Fase 8, para que la app nunca se quede sin opciones de parada).
     const almacen = CONFIG_CEDIS.almacenes[almacenSlug] || CONFIG_CEDIS.almacenes.perecederos;
     pintarSelectParadas([{ nombre: almacen.nombre, paradas: almacen.paradas }], valorPrevio);
   }
 
-  /* ════════════════════════════════
-     8-B. LT TRANSPORTISTA (Fase 11)
-     Antes era texto libre ("Unidad / Económico"). Ahora es un catálogo que
-     administra Fase 11 desde admin (hoy: TEPER, SELVA MAYA) — mismo patrón de
-     resiliencia que CEDIS/paradas: Supabase primero, caché local si no hay
-     internet, respaldo fijo si nunca hubo ninguna de las dos. Se recuerda la
-     última LT elegida en este dispositivo, igual que la parada.
-  ════════════════════════════════ */
   const TRANSPORTISTAS_FALLBACK = ['TEPER', 'SELVA MAYA'];
   const CLAVE_CACHE_TRANSPORTISTAS = 'wm_transporte_transportistas_cache_v1';
   const CLAVE_ULTIMO_TRANSPORTISTA = 'wm_transporte_ultimo_transportista_v1';
@@ -1727,9 +1512,7 @@
         .eq('activo', true)
         .order('nombre', { ascending: true });
       if (error) {
-        // Lo más probable: la tabla `transportistas` todavía no existe
-        // (Fase 11 no aplicada en Supabase todavía). No es un error del usuario.
-        console.warn('No se pudo consultar transportistas (¿ya aplicaste el esquema de la Fase 11?):', error);
+        console.warn('No se pudo consultar transportistas:', error);
         return null;
       }
       if (!data || !data.length) return null;
@@ -1763,10 +1546,6 @@
     pintarSelectTransportistas(TRANSPORTISTAS_FALLBACK);
   }
 
-  // Catálogo de estatus del historial personal ("Mis Reportes"). El estatus real de
-  // cada reporte se actualiza por el equipo de Transporte directamente en la columna
-  // `estatus` de la tabla `reportes_transporte` en Supabase; la app solo lo consulta
-  // y lo muestra con colores para que el asociado sepa en qué va su reporte.
   const ESTATUS_CATALOGO = {
     'Enviado':     { etiqueta: '📨 Enviado',              color: '#0071CE' },
     'En revisión': { etiqueta: '🔍 En proceso de revisión', color: '#d97706' },
@@ -1775,24 +1554,12 @@
   };
   const CLAVE_MIS_REPORTES = 'wm_transporte_mis_reportes_v1';
 
-  /*
-    NOTA (v3): el catálogo de situaciones (SITUACIONES_CATALOGO) vive en
-    admin.html, para el filtro y el concentrado del Historial. El formulario
-    ya no muestra esos checkboxes al asociado — desde esta versión, las
-    subcategorías de "Tipo de reporte" cubren ese papel de forma más
-    específica, y se traducen a "situaciones" por dentro (ver
-    situacionesDesdeTipo) para que el concentrado de admin siga recibiendo datos.
-  */
-
-  /* ════════════════════════════════
-     2. MODAL: selección de CeDis + precarga de asociado
-  ════════════════════════════════ */
   function seleccionarCedis(tipo) {
     cedisSeleccionado = tipo;
     document.querySelectorAll('.cedis-card').forEach(c => c.classList.remove('selected'));
     document.getElementById('card-' + tipo).classList.add('selected');
     document.getElementById('modal-error').style.display = 'none';
-    actualizarParadasSegunCedis(); // las paradas disponibles cambian según el CeDis
+    actualizarParadasSegunCedis();
   }
 
   function actualizarBadgeCedis() {
@@ -1805,9 +1572,6 @@
     document.getElementById('modal-empleado').focus();
   }
 
-  // Ahora es asíncrona porque la consulta del asociado va contra Supabase (con
-  // respaldo en caché local si no hay internet). Mientras consulta, deshabilita el
-  // botón para evitar doble clic y avisa que está "consultando".
   async function cerrarModal() {
     const empModal = document.getElementById('modal-empleado').value.trim();
     if (!empModal || !cedisSeleccionado) {
@@ -1820,7 +1584,6 @@
     boton.disabled = true;
     boton.textContent = 'Consultando…';
 
-    // El número capturado en el modal "consulta" al asociado y precarga el formulario
     cargarDatosAsociado(await buscarAsociadoPorNumero(empModal));
 
     boton.disabled = false;
@@ -1828,8 +1591,6 @@
 
     actualizarBadgeCedis();
 
-    // v3: se recuerda en este dispositivo para no volver a pedirlo — ver
-    // cambiarAsociado() para la salida manual de esto.
     guardarSesionAsociado(empModal, cedisSeleccionado);
 
     const overlay = document.getElementById('modal-overlay');
@@ -1837,8 +1598,6 @@
     setTimeout(() => { overlay.classList.remove('activo', 'hiding'); }, 300);
   }
 
-  // v3: arranca la app directo en el formulario, sin modal, a partir de lo que
-  // ya se recordó en este dispositivo en una visita anterior.
   async function iniciarAppConSesionGuardada(sesion) {
     cedisSeleccionado = sesion.almacen;
     document.getElementById('card-' + sesion.almacen)?.classList.add('selected');
@@ -1847,8 +1606,6 @@
     cargarDatosAsociado(await buscarAsociadoPorNumero(sesion.numEmpleado));
   }
 
-  // "¿No eres tú? Cambiar" — por si el teléfono lo usa más de un asociado.
-  // Olvida lo guardado y vuelve a mostrar el modal de bienvenida.
   function cambiarAsociado() {
     olvidarSesionAsociado();
     cedisSeleccionado = null;
@@ -1859,9 +1616,6 @@
     mostrarModalBienvenida();
   }
 
-  /* ════════════════════════════════
-     3. DATOS DEL ASOCIADO: precarga + resumen + edición
-  ════════════════════════════════ */
   function cargarDatosAsociado(asociado) {
     document.getElementById('nombre').value = asociado.nombre;
     document.getElementById('empleado').value = asociado.numEmpleado;
@@ -1870,18 +1624,9 @@
 
     actualizarResumenAsociado();
 
-    // Si el número no está vinculado a ningún registro, se abre el panel de edición
-    // de inmediato (los campos ya están en blanco) para que el asociado los capture.
     document.getElementById('asociado-edit').style.display = asociado.encontrado ? 'none' : 'block';
   }
 
-  // El <select> de área trae una lista fija de opciones, pero el área real del
-  // asociado viene de la base de datos y podría no coincidir textualmente con
-  // ninguna de ellas (mayúsculas distintas, una variante no contemplada, etc.).
-  // Antes eso hacía que el <select> quedara "vacío" y el resumen mostrara
-  // "Sin área" aunque sí existiera el dato. Ahora, si el área no está en la
-  // lista, se agrega como opción al vuelo para que nunca se pierda el valor
-  // real que ya tenemos guardado.
   function asignarAreaAsociado(area) {
     const select = document.getElementById('area');
     if (area && ![...select.options].some(o => o.value === area)) {
@@ -1900,7 +1645,6 @@
     document.getElementById('resumen-nombre').textContent = nombre || 'Captura tus datos';
     document.getElementById('resumen-meta').textContent = nombre ? `No. ${empleado} · ${area}` : `No. ${empleado} · pendiente`;
     document.getElementById('avatar-iniciales').textContent = obtenerIniciales(nombre);
-    // "¿No eres tú?" solo tiene sentido una vez que hay un número de empleado cargado.
     document.getElementById('btn-cambiar-asociado').style.display = document.getElementById('empleado').value.trim() ? 'block' : 'none';
   }
 
@@ -1915,9 +1659,6 @@
     panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
   }
 
-  /* ════════════════════════════════
-     4. FECHA, HORA Y TURNO AUTOMÁTICOS
-  ════════════════════════════════ */
   function calcularTurno(horaStr) {
     const hora = parseInt(horaStr.split(':')[0], 10);
     if (hora >= 6  && hora < 14) return 'Matutino (06:00–14:00)';
@@ -1925,8 +1666,6 @@
     return 'Nocturno (22:00–06:00)';
   }
 
-  // Solo para mostrar (12h, más fácil de leer en el celular) — el valor real
-  // que viaja con el reporte sigue siendo 24h en el input oculto #hora.
   function formatearHora12(horaStr) {
     const [h, m] = horaStr.split(':').map(Number);
     const periodo = h < 12 ? 'a. m.' : 'p. m.';
@@ -1934,8 +1673,6 @@
     return `${h12}:${String(m).padStart(2, '0')} ${periodo}`;
   }
 
-  // v3: la hora ya no la edita el asociado — es la hora literal en la que se
-  // abrió el formulario. Se calcula una sola vez, aquí, al cargar la página.
   function inicializarFechaHoraTurno() {
     const ahora = new Date();
     document.getElementById('fecha').valueAsDate = ahora;
@@ -1945,14 +1682,6 @@
     document.getElementById('turno').value = calcularTurno(horaActual);
   }
 
-  /* ════════════════════════════════
-     5. TIPO DE REPORTE (categorías + subcategorías dinámicas, v3)
-     Antes eran 10 chips planos. Ahora son 5 categorías; elegir una despliega
-     "Detalle del Reporte" con las subcategorías que aplican solo a ese tipo.
-     El valor final que se guarda en tipo_reporte (y viaja igual que antes a
-     Supabase/WhatsApp) es siempre el mismo texto plano de siempre — para
-     categorías con una sola subcategoría real, no se pide un segundo toque.
-  ════════════════════════════════ */
   const CATEGORIAS_REPORTE = [
     {
       valor: 'Retraso', icono: '🚍', etiqueta: 'Retraso',
@@ -1980,17 +1709,11 @@
       ],
     },
     {
-      // NOTA: "Acoso" y "Soborno" se excluyen a propósito — ya existe un área
-      // encargada de esos temas y se manejan por otro canal, no por aquí.
       valor: 'Operador', icono: '👤', etiqueta: 'Operador',
       subcategorias: [
         { valor: 'Operador con sueño',              etiqueta: 'Operador con sueño / fatiga' },
         { valor: 'Conducta inapropiada del operador', etiqueta: 'Conducta inapropiada' },
         { valor: 'Exceso de velocidad',             etiqueta: 'Exceso de velocidad' },
-        // Se agrega también "conducción brusca/imprudente" (frenados o
-        // rebases bruscos) — es una queja frecuente de transporte de personal
-        // y distinta de "exceso de velocidad" (puede ir despacio y aun así
-        // manejar de forma brusca). Quítala si no aplica.
         { valor: 'Conducción imprudente',           etiqueta: 'Conducción brusca / imprudente' },
       ],
     },
@@ -2000,9 +1723,6 @@
     },
   ];
 
-  // Traduce el tipo de reporte final a "situaciones" (el mismo catálogo que ya
-  // usa admin.html para el concentrado por situación), sin pedirle al asociado
-  // un paso extra — así ese reporte estadístico sigue recibiendo datos.
   const SITUACION_POR_TIPO = {
     'Retraso en salida': ['Retraso'],
     'Retraso en llegada': ['Retraso'],
@@ -2047,14 +1767,12 @@
     const gridSubcat = document.getElementById('chip-subcategoria-reporte');
 
     if (categoria.subcategorias.length) {
-      // Requiere un segundo toque: el tipo final queda vacío hasta elegir subcategoría.
       document.getElementById('tipo-reporte').value = '';
       gridSubcat.innerHTML = categoria.subcategorias.map(s => `
         <div class="chip" data-valor="${s.valor}" onclick="seleccionarSubcategoriaReporte('${s.valor}')">${s.etiqueta}</div>
       `).join('');
       campoSubcat.style.display = 'block';
     } else {
-      // Categoría de una sola idea: se fija de una vez, sin pedir un paso extra.
       campoSubcat.style.display = 'none';
       gridSubcat.innerHTML = '';
       document.getElementById('tipo-reporte').value = categoria.valor;
@@ -2072,9 +1790,6 @@
     document.getElementById('tipo-reporte').value = valor;
   }
 
-  /* ════════════════════════════════
-     6. TABS
-  ════════════════════════════════ */
   function showTab(name) {
     document.querySelectorAll('.tab').forEach((t, i) =>
       t.classList.toggle('active', ['form', 'misreportes'][i] === name)
@@ -2083,21 +1798,15 @@
     document.getElementById('panel-' + name).classList.add('active');
 
     if (name === 'misreportes') {
-      renderizarMisReportes(); // refresca por si se agregó un reporte nuevo
+      renderizarMisReportes();
     }
   }
 
-  /* ════════════════════════════════
-     7. CONTADOR DE CARACTERES (descripción)
-  ════════════════════════════════ */
   function actualizarContador() {
     const el = document.getElementById('descripcion');
     document.getElementById('char-counter').textContent = `${el.value.length} / 600`;
   }
 
-  /* ════════════════════════════════
-     8. RECOLECCIÓN Y VALIDACIÓN DEL FORMULARIO
-  ════════════════════════════════ */
   function recolectarDatos() {
     const camposTexto = ['nombre', 'empleado', 'area', 'celular', 'fecha', 'hora', 'descripcion'];
     let valido = true;
@@ -2108,10 +1817,6 @@
       else el.style.borderColor = '';
     });
 
-    // Tipo de reporte: validado sobre el input oculto. Si ya se eligió una
-    // categoría con subcategorías pero falta el segundo toque, se resalta la
-    // cuadrícula de subcategorías en vez de la de categorías (es ahí donde
-    // falta el toque).
     const tipoReporte = document.getElementById('tipo-reporte').value;
     const chipGridCategorias = document.getElementById('chip-tipo-reporte');
     const chipGridSubcat = document.getElementById('chip-subcategoria-reporte');
@@ -2125,7 +1830,6 @@
 
     if (!valido) {
       alert('Por favor completa todos los campos obligatorios (*)');
-      // Si el dato faltante es del asociado, se abre el panel de edición automáticamente
       if (!document.getElementById('nombre').value.trim() ||
           !document.getElementById('empleado').value.trim() ||
           !document.getElementById('area').value) {
@@ -2134,18 +1838,9 @@
       return null;
     }
 
-    // v3: ya no hay checkboxes de "situaciones observadas" — se derivan solas
-    // del tipo de reporte elegido (ver SITUACION_POR_TIPO), para que el
-    // concentrado por situación de admin.html siga recibiendo datos sin
-    // pedirle al asociado un paso extra.
     const situaciones = SITUACION_POR_TIPO[tipoReporte] || [];
 
     return {
-      // El FOLIO se genera aquí mismo, en el dispositivo, para poder rastrear ESTE
-      // reporte específico en "Mis Reportes" aunque en ese momento no haya internet
-      // (se sincroniza después con el mismo folio, ver guardarEnHistorial). Se usa
-      // un nombre de columna propio ("folio") en vez de "id" para no chocar con la
-      // columna id que la tabla ya pudiera traer de fábrica en Supabase.
       folio:        (crypto.randomUUID ? crypto.randomUUID() : 'local-' + Date.now() + '-' + Math.random().toString(16).slice(2)),
       nombre:       document.getElementById('nombre').value,
       num_empleado: document.getElementById('empleado').value,
@@ -2159,21 +1854,17 @@
       tipo_reporte: tipoReporte,
       situaciones,
       descripcion:  document.getElementById('descripcion').value,
-      cedis:        cedisSeleccionado === 'perecederos' ? 'Perecederos' : 'SECOS', // esto es el ALMACÉN, no el CEDIS (ver Fase 7)
-      cedis_slug:   CONFIG_CEDIS.slug, // Fase 7: identificador real del CEDIS (hoy siempre "villahermosa")
-      estatus:      'Enviado', // estatus inicial; el equipo de Transporte lo actualiza después
+      cedis:        cedisSeleccionado === 'perecederos' ? 'Perecederos' : 'SECOS',
+      cedis_slug:   CONFIG_CEDIS.slug,
+      estatus:      'Enviado',
     };
   }
 
-  // Etiqueta legible para mostrar el arreglo de situaciones en texto (WhatsApp, tarjetas, CSV)
   function formatearSituaciones(situaciones) {
     if (!situaciones || !situaciones.length) return 'Ninguna seleccionada';
     return situaciones.join(', ');
   }
 
-  /* ════════════════════════════════
-     9. ARMAR TEXTO Y ENVÍO POR WHATSAPP
-  ════════════════════════════════ */
   function armarTexto(datos) {
     return '🚌 *NUEVO REPORTE DE TRANSPORTE*\n' +
       '📍 ' + CONFIG_CEDIS.nombre + ' — ' + datos.cedis + '\n' +
@@ -2192,19 +1883,12 @@
       '📝 *Descripción:* ' + datos.descripcion;
   }
 
-  // El número destino se decide automáticamente según el CeDis elegido en el modal.
-  // Al presionar el botón se abre WhatsApp directamente, sin pasos ni confirmaciones extra.
-  // Además, el reporte se guarda en Supabase (historial compartido entre todos).
   async function enviarWhatsApp() {
     const datos = recolectarDatos();
     if (!datos) return;
 
-    // Se guarda en Supabase (o en la cola pendiente si falla) SIN bloquear ni retrasar
-    // la apertura de WhatsApp: el asociado no debe notar ni esperar el guardado.
     guardarEnHistorial(datos);
 
-    // Complementa el CELULAR del asociado (y refresca nombre/área) para futuras
-    // sesiones/dispositivos, y guarda una copia local del reporte para "Mis Reportes".
     guardarAsociadoDesdeReporte(datos);
     registrarReporteLocal(datos);
 
@@ -2219,16 +1903,6 @@
     setTimeout(() => { toast.style.display = 'none'; }, 6000);
   }
 
-  /* ════════════════════════════════
-     11. HISTORIAL DE REPORTES (Supabase — compartido entre todos los asociados)
-     Cada reporte enviado se guarda en la tabla `reportes_transporte` de Supabase,
-     así que el historial se ve igual desde cualquier teléfono o computadora que
-     abra esta misma app: ya no es un archivo local por dispositivo.
-
-     RESILIENCIA SIN INTERNET: si el guardado en Supabase falla (sin señal, etc.),
-     el reporte NO se pierde: se guarda en una cola local ("pendientes") y se
-     reintenta enviar automáticamente la próxima vez que la app cargue con internet.
-  ════════════════════════════════ */
   const CLAVE_PENDIENTES = 'wm_transporte_pendientes_v1';
 
   function obtenerPendientes() {
@@ -2249,8 +1923,6 @@
     }
   }
 
-  // Inserta un reporte en Supabase. Si no hay conexión configurada o falla la red,
-  // el reporte se guarda en la cola local para reintentarlo después — nunca se pierde.
   async function guardarEnHistorial(datos) {
     if (!supabaseClient) { guardarPendienteLocal(datos); return; }
     const { error } = await supabaseClient.from(NOMBRE_TABLA).insert([datos]);
@@ -2260,13 +1932,6 @@
     }
   }
 
-  /* ════════════════════════════════
-     11-B. "MIS REPORTES" (histórico local por dispositivo, con estatus)
-     A diferencia de la Lista (compartida, viene de Supabase), esto vive únicamente
-     en localStorage de este teléfono/navegador: cada quien ve solo lo que él envió.
-     El estatus mostrado sí se refresca contra Supabase cada vez que se abre esta
-     vista, para reflejar cambios hechos por el equipo de Transporte.
-  ════════════════════════════════ */
   function obtenerMisReportesLocales() {
     try { return JSON.parse(localStorage.getItem(CLAVE_MIS_REPORTES)) || []; }
     catch (e) { return []; }
@@ -2299,15 +1964,9 @@
 
     cont.innerHTML = '<div class="historial-vacio">Cargando estatus…</div>';
 
-    // Refresca el estatus y el mensaje de seguimiento reales desde Supabase (si hay
-    // conexión); si no, se muestra el último dato conocido guardado localmente.
     let infoPorFolio = {};
     if (supabaseClient) {
       try {
-        // Fase 10: ya no se hace SELECT directo sobre `reportes_transporte`
-        // (esa tabla no tiene política de lectura para el rol anónimo). Se
-        // usa una función controlada que solo devuelve estatus/comentario de
-        // los folios que este dispositivo ya conoce — nunca la tabla completa.
         const folios = locales.map(r => r.folio).filter(Boolean);
         const { data, error } = await supabaseClient
           .rpc('f_obtener_estatus_reportes', { p_folios: folios });
@@ -2335,7 +1994,6 @@
     }).join('');
   }
 
-  // Reintenta enviar todos los reportes que quedaron pendientes por falta de conexión.
   async function sincronizarPendientes() {
     if (!supabaseClient) return;
     const pendientes = obtenerPendientes();
@@ -2348,45 +2006,30 @@
     }
     const restantes = pendientes.filter(p => !exitosos.includes(p));
     localStorage.setItem(CLAVE_PENDIENTES, JSON.stringify(restantes));
-    // Refresca "Mis Reportes" si estaba abierto
     if (exitosos.length && document.getElementById('panel-misreportes').classList.contains('active')) renderizarMisReportes();
   }
 
   /* ════════════════════════════════
-     12. INICIALIZACIÓN
+     INICIALIZACIÓN
+     Ya no hay resolución de CEDIS por URL ni pantalla de "no encontrado":
+     esta app es, y solo es, la de CEDIS Villahermosa.
   ════════════════════════════════ */
-  // Fase 4: si la URL trae /cedis/{slug}/ y ese slug no existe, se muestra el
-  // error y la app normal ni siquiera se inicializa (nada de precarga, nada
-  // de Supabase, nada de modal).
-  if (!RESULTADO_CEDIS.encontrado) {
-    document.getElementById('app-contenido').style.display = 'none';
-    document.getElementById('slug-no-encontrado').textContent = '/cedis/' + RESULTADO_CEDIS.slugBuscado + '/';
-    document.getElementById('pantalla-cedis-no-encontrado').style.display = 'flex';
+  document.getElementById('header-cedis-nombre').textContent = CONFIG_CEDIS.nombre;
+
+  pintarCategoriasReporte();
+  inicializarFechaHoraTurno();
+  actualizarParadasSegunCedis();
+  actualizarTransportistas();
+
+  const sesion = obtenerSesionAsociado();
+  if (sesion && sesion.numEmpleado && sesion.almacen) {
+    iniciarAppConSesionGuardada(sesion);
   } else {
-    // El nombre del CEDIS en el encabezado ya no está fijo en el HTML: sale de
-    // CONFIG_CEDIS, resuelto arriba a partir de la URL (o del piloto por defecto).
-    document.getElementById('header-cedis-nombre').textContent = CONFIG_CEDIS.nombre;
-
-    pintarCategoriasReporte();
-    inicializarFechaHoraTurno();
-    actualizarParadasSegunCedis(); // paradas de "Perecederos" por defecto hasta que se resuelva el almacén
-    actualizarTransportistas(); // catálogo de LT — no depende del almacén elegido
-
-    // v3: si ya se recordó al asociado en este dispositivo, se salta el modal
-    // por completo y se entra directo al formulario ya precargado; si no,
-    // se pide una sola vez y queda recordado para la próxima visita.
-    const sesion = obtenerSesionAsociado();
-    if (sesion && sesion.numEmpleado && sesion.almacen) {
-      iniciarAppConSesionGuardada(sesion);
-    } else {
-      cargarDatosAsociado({ numEmpleado: '', nombre: '', area: '', celular: '', encontrado: true });
-      mostrarModalBienvenida();
-    }
-
-    // Al abrir la app (con internet), intenta reenviar en silencio cualquier reporte
-    // que se haya quedado pendiente por falta de conexión en una sesión anterior.
-    sincronizarPendientes();
+    cargarDatosAsociado({ numEmpleado: '', nombre: '', area: '', celular: '', encontrado: true });
+    mostrarModalBienvenida();
   }
+
+  sincronizarPendientes();
 </script>
 </body>
 </html>
