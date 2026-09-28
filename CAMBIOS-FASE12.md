@@ -68,3 +68,43 @@ expirara). Ahora, además:
 ## Archivos entregados en esta fase
 - `app/index.html`, `404.html`, `index.html` (idénticos, un solo CEDIS)
 - `admin/index.html` (sin selector de CEDIS + cierre por inactividad)
+
+## 4) Ajustes pedidos después de la primera entrega
+
+- **QR:** se restauró el diseño ilustrado completo (ciudad, camión, bus, tren,
+  logo Walmart) que se había simplificado por accidente al quitar el
+  selector de CEDIS. Se agregó una franja "🥦 Perecederos · 📦 SECOS" y el
+  pie dice "CEDIS Villahermosa", para que quede claro que ese mismo QR sirve
+  para las dos naves (el asociado elige adentro de la app).
+
+- **Nueva pestaña "📊 Nivel de Servicio":** antes vivía colapsada dentro de
+  Historial y se recalculaba sobre el mismo rango de fechas que la lista.
+  Ahora es su propia pestaña con:
+  - Periodo propio (Este mes / Mes pasado / Últimos 3 meses / Personalizado)
+    — pensado para abrir la pestaña el día de la sesión mensual y ya tener
+    "Mes pasado" con un clic.
+  - Filtro de nave (Perecederos / SECOS / Ambas).
+  - Dos indicadores (total de reportes del periodo, % resueltos global) y el
+    comparativo por LT debajo.
+  - Exportar a CSV ese comparativo, por separado del CSV general de Historial.
+
+- **Historial — se acabó la lista infinita:** la lista de reportes ahora se
+  pagina de 15 en 15 con "Anterior / Siguiente" y un contador
+  ("Mostrando 1–15 de 42"). Los filtros, el concentrado por situación y el
+  CSV siguen trabajando sobre el rango completo — solo lo que se *pinta en
+  pantalla* está paginado, así que no se pierde nada al exportar.
+
+### Ideas adicionales para cuando quieras (no implementadas todavía)
+- **Alertas de antigüedad:** marcar en rojo los reportes "Enviado"/"En
+  revisión" con más de 48–72 horas sin actualizarse, para que salten a la
+  vista en Historial sin tener que filtrar por estatus.
+- **Tendencia por LT:** hoy la Tendencia semanal es global; podría filtrarse
+  también por LT Transportista para ver si una línea mejora o empeora mes a
+  mes — natural complemento de la nueva pestaña de Nivel de Servicio.
+- **Resumen imprimible/PDF de la sesión mensual:** un botón en "Nivel de
+  Servicio" que arme una vista lista para imprimir/PDF con el periodo, el
+  comparativo y los reportes más graves de cada LT, para llevar a la reunión
+  sin tener que armar el CSV a mano.
+- **Reportes recurrentes por asociado:** si un mismo número de empleado
+  reporta muchas veces el mismo tipo de incidente, marcarlo (podría indicar
+  un problema puntual de una ruta/parada, no solo del transportista).
