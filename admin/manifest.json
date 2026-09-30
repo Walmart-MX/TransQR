@@ -1,0 +1,17 @@
+{
+  "name": "TransQR Admin - Panel de Transporte",
+  "short_name": "TransQR Admin",
+  "description": "Panel administrativo de reportes de transporte de personal - CEDIS Walmart Villahermosa.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f0f4f9",
+  "theme_color": "#003087",
+  "lang": "es-MX",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

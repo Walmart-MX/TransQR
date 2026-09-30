@@ -2,8 +2,16 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Panel Administrativo — Transporte CEDIS Walmart Villahermosa</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#003087">
+<link rel="icon" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TransQR Admin">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -89,6 +97,22 @@
   .header-cedis-badge {
     background: var(--yellow); color: var(--dark); padding: 4px 12px; border-radius: 20px;
     font-size: 0.72rem; font-weight: 800; letter-spacing: .04em; white-space: nowrap;
+  }
+  .banner-instalar {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    background: #fff8e1; border-bottom: 1px solid #ffe4a1;
+  }
+  .banner-instalar-icono { font-size: 1.4rem; flex-shrink: 0; }
+  .banner-instalar-texto { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .banner-instalar-texto strong { font-size: 0.8rem; color: var(--dark); }
+  .banner-instalar-texto span { font-size: 0.72rem; color: var(--muted); line-height: 1.35; }
+  .banner-instalar-btn {
+    flex-shrink: 0; background: var(--blue); color: white; border: none; border-radius: 9px;
+    padding: 9px 14px; font-size: 0.78rem; font-weight: 800; cursor: pointer; font-family: inherit;
+  }
+  .banner-instalar-cerrar {
+    flex-shrink: 0; background: none; border: none; color: var(--muted); font-size: 1rem;
+    cursor: pointer; padding: 4px 6px; line-height: 1;
   }
   .tabs { display: flex; background: white; border-bottom: 2px solid var(--border); padding: 0 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow-x:auto; }
   .tab {
@@ -186,6 +210,12 @@
   .historial-nota { font-size: 0.72rem; color: var(--muted); line-height: 1.5; margin: -6px 0 14px; }
   .historial-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
   .historial-tag { background: #eef5fd; color: var(--blue); font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+  .historial-item-alerta-advertencia { border-color: #d97706; background: #fffbeb; }
+  .historial-item-alerta-critica { border-color: var(--error); background: #fef2f2; box-shadow: 0 0 0 1px var(--error) inset; }
+  .badge-antiguedad { display: inline-block; margin-top: 5px; font-size: 0.68rem; font-weight: 800; padding: 2px 9px; border-radius: 999px; }
+  .badge-antiguedad-advertencia { background: #fef3c7; color: #b45309; }
+  .badge-antiguedad-critica { background: #fee2e2; color: var(--error); }
+  .historial-recurrente { margin-top: 7px; padding: 7px 9px; border-radius: 9px; background: #fff7ed; border: 1px solid #fdba74; font-size: 0.7rem; font-weight: 700; color: #9a3412; line-height: 1.4; }
   .badge-estatus { font-size: 0.68rem; font-weight: 800; padding: 3px 10px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
   .historial-estatus-editor { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
   .historial-estatus-editor label { font-size: 0.72rem; font-weight: 700; color: var(--muted); flex-shrink: 0; }
@@ -317,6 +347,24 @@
   <button type="button" class="btn-cerrar-sesion" onclick="abrirCambioPassword()" style="margin-right:6px;">🔑 Contraseña</button>
   <button type="button" class="btn-cerrar-sesion" onclick="cerrarSesionAdmin()">Salir</button>
 </header>
+
+<div class="banner-instalar" id="banner-instalar-android" style="display:none;">
+  <span class="banner-instalar-icono"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#003087" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"></rect><line x1="11" y1="18" x2="13" y2="18"></line><path d="M9 8l3 3 3-3"></path><line x1="12" y1="6" x2="12" y2="11"></line></svg></span>
+  <div class="banner-instalar-texto">
+    <strong>Instala el panel en tu telefono</strong>
+    <span>Abre el icono directo, sin pasar por el navegador cada vez.</span>
+  </div>
+  <button class="banner-instalar-btn" onclick="instalarPWA()">Instalar</button>
+  <button class="banner-instalar-cerrar" onclick="cerrarBannerInstalar('android')" aria-label="Cerrar">X</button>
+</div>
+<div class="banner-instalar" id="banner-instalar-ios" style="display:none;">
+  <span class="banner-instalar-icono"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#003087" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"></rect><line x1="11" y1="18" x2="13" y2="18"></line><path d="M9 8l3 3 3-3"></path><line x1="12" y1="6" x2="12" y2="11"></line></svg></span>
+  <div class="banner-instalar-texto">
+    <strong>Instala el panel en tu iPhone</strong>
+    <span>Toca el boton Compartir de Safari y luego "Agregar a inicio".</span>
+  </div>
+  <button class="banner-instalar-cerrar" onclick="cerrarBannerInstalar('ios')" aria-label="Cerrar">X</button>
+</div>
 
 <div id="password-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,48,135,0.72); backdrop-filter:blur(6px); z-index:1000; align-items:center; justify-content:center; padding:16px;">
   <div class="modal-box" style="max-width:380px;">
@@ -761,6 +809,7 @@
     </p>
     <div id="servicio-lt-lista"><div class="historial-vacio">Cargando…</div></div>
     <button class="btn-exportar-concentrado" onclick="descargarNivelServicioCSV()">⬇️ Exportar comparativo (CSV)</button>
+    <button class="btn-exportar-concentrado" style="background:var(--dark);" onclick="abrirResumenImprimible()">🖨️ Resumen imprimible / PDF de la sesión</button>
   </div>
 
 </div>
@@ -769,6 +818,13 @@
 
   <div class="panel-header-row">
     <h2>🗂️ Historial y Seguimiento</h2>
+  </div>
+
+  <div class="card" id="card-notificaciones-admin" style="display:none;">
+    <div class="card-title">Notificaciones</div>
+    <p class="historial-nota" style="margin-top:0;">Recibe un aviso en este dispositivo en cuanto llegue un reporte nuevo, sin tener que dejar el panel abierto.</p>
+    <button type="button" class="btn-guardar-seguimiento" style="margin-top:0;" id="btn-activar-notificaciones-admin" onclick="suscribirNotificacionesAdmin()">Activar notificaciones</button>
+    <div class="seguimiento-estado" id="estado-notificaciones-admin"></div>
   </div>
 
   <div class="kpi-grid" id="kpi-grid">
@@ -899,6 +955,10 @@
           Muestra el total de reportes por semana de las últimas 8 semanas (usa el filtro de
           nave y situación de arriba, pero no el rango de fechas — siempre mira 8 semanas atrás).
         </p>
+        <div class="field" style="margin-bottom:10px;">
+          <label>LT Transportista (opcional — compara una sola línea mes a mes)</label>
+          <select id="filtro-tendencia-lt" onchange="cambiarFiltroTendenciaLT()"><option value="todas">Todas las LT</option></select>
+        </div>
         <div id="tendencia-svg-wrap"></div>
         </div>
       </div>
@@ -925,6 +985,11 @@
   const NOMBRE_TABLA_RUTAS   = 'rutas';
   const NOMBRE_TABLA_PARADAS = 'paradas';
   const NOMBRE_TABLA_TRANSPORTISTAS = 'transportistas';
+  const NOMBRE_TABLA_PUSH = 'push_subscriptions';
+  // Llave publica de VAPID (segura de exponer, es la contraparte de la
+  // privada que solo vive en la Edge Function). Generarla y pegarla aqui
+  // es un paso de despliegue -- ver CAMBIOS-FASE14.md.
+  const VAPID_PUBLIC_KEY = 'TU-VAPID-PUBLIC-KEY-AQUI';
 
   const supabaseClient = (SUPABASE_URL.includes('TU-PROYECTO'))
     ? null
@@ -964,6 +1029,35 @@
     'Conducta del operador', 'Operador con sueño', 'Conducta inapropiada del operador',
     'Exceso de velocidad', 'Conducción imprudente', 'Otro',
   ];
+
+  // Alertas de antigüedad (Historial): un reporte "Enviado"/"En revisión" que lleva
+  // muchas horas sin que nadie toque su seguimiento se marca para saltar a la vista.
+  const ALERTA_ANTIGUEDAD_ADVERTENCIA_HORAS = 48;
+  const ALERTA_ANTIGUEDAD_CRITICA_HORAS = 72;
+
+  // Reportes recurrentes: mismo No. de empleado + mismo tipo de reporte, varias
+  // veces dentro de la ventana de días de abajo — posible señal de ruta/parada
+  // puntual, no solo del transportista.
+  const RECURRENCIA_UMBRAL = 3;
+  const RECURRENCIA_DIAS_VENTANA = 90;
+
+  // Orden de severidad para elegir "los reportes más graves" de cada LT en el
+  // resumen imprimible de Nivel de Servicio. Mayor número = más grave.
+  const SEVERIDAD_SITUACION = {
+    Accidente: 100, Mecanico: 80, Velocidad: 60, Trato: 50,
+    Retraso: 30, Clima: 20, Limpieza: 10, Otro: 5,
+  };
+
+  // Los reportes vienen de un formulario publico sin autenticacion (Fase 10):
+  // cualquier texto libre (nombre, descripcion, area, celular, tipo, LT) hay
+  // que tratarlo como no confiable antes de pintarlo con innerHTML. Sin esto,
+  // alguien podria meter HTML/JS en la descripcion de un reporte y que se
+  // ejecute en el navegador del administrador la proxima vez que abra Historial.
+  function escapeHtml(valor) {
+    return String(valor ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+  }
 
   function showTab(name) {
     document.querySelectorAll('.tab').forEach((t, i) =>
@@ -1103,6 +1197,8 @@
   let vistaHistorialActiva = 'lista';
   let ultimosResultadosHistorial = [];
   let ultimoConcentradoCalculado = [];
+  let mapaRecurrencias = new Map();
+  let filtroTendenciaLT = 'todas';
   const HISTORIAL_PAGE_SIZE = 15;
   let paginaHistorialActual = 0;
 
@@ -1177,6 +1273,31 @@
     filtroTipoReporteActivo = document.getElementById('filtro-tipo-reporte').value;
     if (vistaHistorialActiva === 'lista') renderizarHistorial();
     else renderizarTendencia();
+  }
+
+  async function poblarSelectLTTendencia() {
+    const select = document.getElementById('filtro-tendencia-lt');
+    if (!select || !supabaseClient) return;
+
+    const { data, error } = await supabaseClient
+      .from(NOMBRE_TABLA_TRANSPORTISTAS)
+      .select('nombre')
+      .eq('activo', true)
+      .order('nombre', { ascending: true });
+
+    if (error) {
+      console.warn('No se pudo cargar el catalogo de LT para la tendencia:', error);
+      return;
+    }
+
+    const nombres = (data || []).map(t => t.nombre);
+    select.innerHTML = '<option value="todas">Todas las LT</option>' +
+      nombres.map(n => `<option value="${n}">${n}</option>`).join('');
+  }
+
+  function cambiarFiltroTendenciaLT() {
+    filtroTendenciaLT = document.getElementById('filtro-tendencia-lt').value;
+    renderizarTendencia();
   }
 
   function cambiarFiltroEstatus() {
@@ -1400,6 +1521,109 @@
     URL.revokeObjectURL(enlace.href);
   }
 
+  function calcularScoreSeveridad(r) {
+    const situaciones = r.situaciones || [];
+    const pesoMax = situaciones.reduce((max, s) => Math.max(max, SEVERIDAD_SITUACION[s] || 0), 0);
+    const bonoAbierto = (r.estatus || 'Enviado') !== 'Resuelto' ? 1000 : 0;
+    return bonoAbierto + pesoMax;
+  }
+
+  async function abrirResumenImprimible() {
+    if (!ultimoServicioCalculado.length) { alert('No hay datos para armar el resumen en este periodo.'); return; }
+    if (!supabaseClient) { alert('Supabase todavia no esta configurado.'); return; }
+
+    const desde = ultimoServicioRango.desde;
+    const hasta = ultimoServicioRango.hasta;
+
+    let consulta = supabaseClient.from(NOMBRE_TABLA)
+      .select('fecha, hora, nombre, num_empleado, unidad, cedis, tipo_reporte, situaciones, descripcion, estatus')
+      .eq('cedis_slug', CEDIS_SLUG);
+    if (desde) consulta = consulta.gte('fecha', desde);
+    if (hasta) consulta = consulta.lte('fecha', hasta);
+    if (filtroServicioNave !== 'Ambos') consulta = consulta.eq('cedis', filtroServicioNave);
+
+    const resultadoConsulta = await consulta;
+    const data = resultadoConsulta.data;
+    const error = resultadoConsulta.error;
+    if (error) {
+      console.warn('No se pudo armar el resumen imprimible:', error);
+      alert('No se pudo cargar la informacion para el resumen. Intenta de nuevo.');
+      return;
+    }
+
+    const porLT = {};
+    (data || []).forEach(r => {
+      const lt = (r.unidad || '').trim();
+      if (!lt || lt === 'No especificado') return;
+      if (!porLT[lt]) porLT[lt] = [];
+      porLT[lt].push(r);
+    });
+
+    const GRAVES_POR_LT = 3;
+
+    function etiquetaSituaciones(r) {
+      const lista = r.situaciones || [];
+      if (!lista.length) return 'Sin clasificar';
+      return lista.map(v => {
+        const encontrado = SITUACIONES_CATALOGO.find(s => s.valor === v);
+        return encontrado ? encontrado.etiqueta : v;
+      }).join(', ');
+    }
+
+    function filaGraveHTML(r) {
+      const catalogoEstatus = ESTATUS_CATALOGO[r.estatus];
+      const etiquetaEstatus = catalogoEstatus ? catalogoEstatus.etiqueta : (r.estatus || 'Enviado');
+      return '<tr><td>' + r.fecha + '</td><td>' + (r.nombre || '') + ' (No. ' + (r.num_empleado || 's/n') + ')</td><td>' +
+        (r.tipo_reporte || '') + '</td><td>' + etiquetaSituaciones(r) + '</td><td>' + etiquetaEstatus + '</td></tr>';
+    }
+
+    function filaComparativoHTML(f) {
+      return '<tr><td>' + f.lt + '</td><td>' + f.total + '</td><td>' + f.resueltos + '</td><td>' + f.pct + '%</td></tr>';
+    }
+
+    const seccionesLT = ultimoServicioCalculado.map(f => {
+      const reportesLT = (porLT[f.lt] || []).slice()
+        .sort((a, b) => calcularScoreSeveridad(b) - calcularScoreSeveridad(a))
+        .slice(0, GRAVES_POR_LT);
+      const tabla = reportesLT.length
+        ? '<table class="tabla-resumen"><thead><tr><th>Fecha</th><th>Asociado</th><th>Tipo</th><th>Situacion</th><th>Estatus</th></tr></thead><tbody>' +
+          reportesLT.map(filaGraveHTML).join('') + '</tbody></table>'
+        : '<p class="nota-vacio">Sin reportes con detalle disponible en este periodo.</p>';
+      return '<h3>' + f.lt + ' -- ' + f.total + ' reporte(s), ' + f.pct + '% resueltos</h3>' + tabla;
+    }).join('');
+
+    const navaTexto = filtroServicioNave === 'Ambos' ? 'Perecederos y SECOS' : filtroServicioNave;
+    const tablaComparativo = '<table class="tabla-resumen"><thead><tr><th>LT Transportista</th><th>Total reportes</th><th>Resueltos</th><th>% Resueltos</th></tr></thead><tbody>' +
+      ultimoServicioCalculado.map(filaComparativoHTML).join('') + '</tbody></table>';
+
+    const partesHTML = [];
+    partesHTML.push('<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">');
+    partesHTML.push('<title>Resumen Nivel de Servicio ' + desde + ' a ' + hasta + '</title>');
+    partesHTML.push('<style>');
+    partesHTML.push('body { font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; padding: 24px; max-width: 900px; margin: 0 auto; }');
+    partesHTML.push('h1 { font-size: 1.4rem; margin-bottom: 2px; } h2 { font-size: 1rem; color: #444; font-weight: 600; margin-top: 0; }');
+    partesHTML.push('h3 { font-size: 0.95rem; margin: 22px 0 6px; border-bottom: 2px solid #0071CE; padding-bottom: 4px; }');
+    partesHTML.push('table { width: 100%; border-collapse: collapse; margin-top: 6px; } th, td { border: 1px solid #ccc; padding: 6px 8px; font-size: 0.78rem; text-align: left; }');
+    partesHTML.push('th { background: #f1f5f9; } .nota-vacio { font-size: 0.78rem; color: #777; font-style: italic; }');
+    partesHTML.push('.encabezado { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #0071CE; padding-bottom: 10px; margin-bottom: 16px; }');
+    partesHTML.push('.btn-imprimir { padding: 10px 18px; background: #0071CE; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem; }');
+    partesHTML.push('@media print { .no-imprimir { display: none; } }');
+    partesHTML.push('</style></head><body>');
+    partesHTML.push('<div class="no-imprimir" style="text-align:right; margin-bottom:14px;"><button class="btn-imprimir" onclick="window.print()">Imprimir / Guardar como PDF</button></div>');
+    partesHTML.push('<div class="encabezado"><div><h1>Nivel de Servicio por LT Transportista</h1>');
+    partesHTML.push('<h2>' + CEDIS_NOMBRE + ' - Nave: ' + navaTexto + '</h2></div>');
+    partesHTML.push('<div style="text-align:right; font-size:0.85rem;"><div><strong>Periodo:</strong> ' + desde + ' al ' + hasta + '</div>');
+    partesHTML.push('<div><strong>Generado:</strong> ' + new Date().toLocaleString('es-MX') + '</div></div></div>');
+    partesHTML.push('<h3>Comparativo general</h3>' + tablaComparativo);
+    partesHTML.push('<h2 style="margin-top:26px;">Reportes mas graves por LT (hasta ' + GRAVES_POR_LT + ' por linea)</h2>' + seccionesLT);
+    partesHTML.push('</body></html>');
+
+    const ventana = window.open('', '_blank');
+    if (!ventana) { alert('El navegador bloqueo la ventana emergente. Permite pop-ups para este sitio e intenta de nuevo.'); return; }
+    ventana.document.write(partesHTML.join(''));
+    ventana.document.close();
+  }
+
   function descargarConcentradoCSV() {
     if (!ultimoConcentradoCalculado.length) { alert('No hay concentrado para exportar en este rango.'); return; }
     const encabezados = ['Situación', 'Perecederos', 'SECOS', 'Total'];
@@ -1449,12 +1673,13 @@
     const inicioMasAntiguo = inicioDeSemana(new Date());
     inicioMasAntiguo.setDate(inicioMasAntiguo.getDate() - 7 * (SEMANAS_TENDENCIA - 1));
 
-    let consulta = supabaseClient.from(NOMBRE_TABLA).select('fecha, situaciones, cedis')
+    let consulta = supabaseClient.from(NOMBRE_TABLA).select('fecha, situaciones, cedis, unidad')
       .eq('cedis_slug', CEDIS_SLUG)
       .gte('fecha', formatearFechaLocal(inicioMasAntiguo));
     if (filtroCedisActivo !== 'Ambos') consulta = consulta.eq('cedis', filtroCedisActivo);
     if (filtroSituacionSeleccionada.size > 0) consulta = consulta.overlaps('situaciones', [...filtroSituacionSeleccionada]);
     if (filtroTipoReporteActivo !== 'todos') consulta = consulta.eq('tipo_reporte', filtroTipoReporteActivo);
+    if (filtroTendenciaLT !== 'todas') consulta = consulta.eq('unidad', filtroTendenciaLT);
 
     const { data, error } = await consulta;
     if (error) {
@@ -1566,6 +1791,79 @@
     return data || [];
   }
 
+  /* ════════════════════════════════
+     ALERTAS DE ANTIGÜEDAD
+     Un reporte "Enviado"/"En revisión" se marca en amarillo (48h) o rojo (72h)
+     si nadie ha tocado su seguimiento desde que se recibió. Se calcula con lo
+     que ya viaja en cada fila (fecha, hora, seguimiento_actualizado_en) — no
+     hace falta ninguna columna ni consulta nueva.
+  ════════════════════════════════ */
+  function fechaReferenciaAntiguedad(r) {
+    if (r.seguimiento_actualizado_en) return new Date(r.seguimiento_actualizado_en);
+    return new Date(`${r.fecha}T${r.hora || '00:00'}:00`);
+  }
+
+  function horasSinActualizar(r) {
+    const ref = fechaReferenciaAntiguedad(r);
+    if (isNaN(ref.getTime())) return 0;
+    return (Date.now() - ref.getTime()) / 3600000;
+  }
+
+  function nivelAlertaAntiguedad(r) {
+    if (!['Enviado', 'En revisión'].includes(r.estatus || 'Enviado')) return null;
+    const horas = horasSinActualizar(r);
+    if (horas >= ALERTA_ANTIGUEDAD_CRITICA_HORAS) return 'critica';
+    if (horas >= ALERTA_ANTIGUEDAD_ADVERTENCIA_HORAS) return 'advertencia';
+    return null;
+  }
+
+  function badgeAntiguedadHTML(r) {
+    const nivel = nivelAlertaAntiguedad(r);
+    if (!nivel) return '';
+    const horas = Math.floor(horasSinActualizar(r));
+    const etiqueta = nivel === 'critica' ? 'Sin actualizar: mas de 72h' : 'Sin actualizar: mas de 48h';
+    return `<div class="badge-antiguedad badge-antiguedad-${nivel}">${etiqueta} (${horas}h)</div>`;
+  }
+
+  /* ════════════════════════════════
+     REPORTES RECURRENTES POR ASOCIADO
+     Si el mismo No. de empleado reporta el mismo tipo de incidente varias veces
+     en la ventana de días configurada, puede ser una ruta/parada puntual y no
+     solo el transportista — se marca la tarjeta para que salte a la vista.
+  ════════════════════════════════ */
+  async function calcularMapaRecurrencias() {
+    const mapa = new Map();
+    if (!supabaseClient) return mapa;
+
+    const limite = new Date();
+    limite.setDate(limite.getDate() - RECURRENCIA_DIAS_VENTANA);
+
+    const { data, error } = await supabaseClient
+      .from(NOMBRE_TABLA)
+      .select('num_empleado, tipo_reporte')
+      .eq('cedis_slug', CEDIS_SLUG)
+      .gte('fecha', formatearFechaLocal(limite));
+
+    if (error) {
+      console.warn('No se pudo calcular recurrencias por asociado:', error);
+      return mapa;
+    }
+
+    (data || []).forEach(r => {
+      if (!r.num_empleado || !r.tipo_reporte) return;
+      const clave = `${r.num_empleado}|||${r.tipo_reporte}`;
+      mapa.set(clave, (mapa.get(clave) || 0) + 1);
+    });
+    return mapa;
+  }
+
+  function badgeRecurrenteHTML(r) {
+    if (!r.num_empleado || !r.tipo_reporte) return '';
+    const conteo = mapaRecurrencias.get(`${r.num_empleado}|||${r.tipo_reporte}`) || 0;
+    if (conteo < RECURRENCIA_UMBRAL) return '';
+    return `<div class="historial-recurrente">RECURRENTE: ${escapeHtml(r.nombre)} (No. ${escapeHtml(r.num_empleado)}) ha reportado "${escapeHtml(r.tipo_reporte)}" ${conteo} veces en los ultimos ${RECURRENCIA_DIAS_VENTANA} dias -- revisa si es una ruta/parada puntual, no solo la LT.</div>`;
+  }
+
   async function renderizarHistorial() {
     actualizarBadgeFiltrosActivos();
     const lista = document.getElementById('historial-lista');
@@ -1578,8 +1876,12 @@
     }
 
     lista.innerHTML = '<div class="historial-vacio">Cargando…</div>';
-    const resultados = await filtrarHistorial();
+    const [resultados, mapaRecurrenciasCalculado] = await Promise.all([
+      filtrarHistorial(),
+      calcularMapaRecurrencias(),
+    ]);
     ultimosResultadosHistorial = resultados;
+    mapaRecurrencias = mapaRecurrenciasCalculado;
 
     document.getElementById('historial-resumen').textContent =
       `${resultados.length} reporte${resultados.length === 1 ? '' : 's'} encontrado${resultados.length === 1 ? '' : 's'}`;
@@ -1607,17 +1909,22 @@
       <button type="button" class="btn-guardar-seguimiento" style="margin-top:0; width:auto; padding:9px 16px;" ${paginaHistorialActual >= totalPaginas - 1 ? 'disabled' : ''} onclick="cambiarPaginaHistorial(1)">Siguiente →</button>
     `;
 
-    lista.innerHTML = pagina.map(r => `
-      <div class="historial-item">
+    lista.innerHTML = pagina.map(r => {
+      const nivelAlerta = nivelAlertaAntiguedad(r);
+      const claseAlerta = nivelAlerta ? ` historial-item-alerta-${nivelAlerta}` : '';
+      return `
+      <div class="historial-item${claseAlerta}">
         <div class="historial-top">
-          <span>${r.fecha} · ${r.hora} · ${CEDIS_NOMBRE}</span>
-          <span class="historial-tipo">${r.tipo_reporte}</span>
+          <span>${escapeHtml(r.fecha)} · ${escapeHtml(r.hora)} · ${CEDIS_NOMBRE}</span>
+          <span class="historial-tipo">${escapeHtml(r.tipo_reporte)}</span>
         </div>
-        <div class="historial-desc">${r.nombre} — ${r.descripcion}</div>
+        <div class="historial-desc">${escapeHtml(r.nombre)} — ${escapeHtml(r.descripcion)}</div>
         ${(r.situaciones && r.situaciones.length) ? `
           <div class="historial-tags">
-            ${r.situaciones.map(v => `<span class="historial-tag">${(SITUACIONES_CATALOGO.find(s => s.valor === v) || {}).etiqueta || v}</span>`).join('')}
+            ${r.situaciones.map(v => `<span class="historial-tag">${escapeHtml((SITUACIONES_CATALOGO.find(s => s.valor === v) || {}).etiqueta || v)}</span>`).join('')}
           </div>` : ''}
+        ${badgeAntiguedadHTML(r)}
+        ${badgeRecurrenteHTML(r)}
 
         <div class="historial-estatus-editor">
           <label for="estatus-${r.folio}">Estatus:</label>
@@ -1629,12 +1936,13 @@
         </div>
         <div class="field" style="margin-top:8px;">
           <label style="font-size:0.72rem; margin-bottom:4px;">Mensaje para el asociado (opcional, se ve en "Mis Reportes")</label>
-          <textarea id="comentario-${r.folio}" maxlength="240" placeholder="Ej. Ya estamos coordinando con la línea de transporte, en breve tendrás una respuesta.">${r.comentario_seguimiento || ''}</textarea>
+          <textarea id="comentario-${r.folio}" maxlength="240" placeholder="Ej. Ya estamos coordinando con la línea de transporte, en breve tendrás una respuesta.">${escapeHtml(r.comentario_seguimiento || '')}</textarea>
         </div>
         <button type="button" class="btn-guardar-seguimiento" id="btn-guardar-${r.folio}" onclick="guardarSeguimientoReporte('${r.folio}')">💾 Guardar seguimiento</button>
         <div class="seguimiento-estado" id="seguimiento-estado-${r.folio}"></div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   async function guardarSeguimientoReporte(folio) {
@@ -1788,6 +2096,7 @@
     cargarNombreAdmin();
     renderizarChipsSituacion();
     poblarSelectsTipoYEstatus();
+    poblarSelectLTTendencia();
     aplicarFiltroRapido(document.querySelector('#chip-filtro-historial .chip[data-filtro="hoy"]'), 'hoy');
     actualizarIndicadoresHistorial();
 
@@ -1801,6 +2110,116 @@
   }
 
   verificarSesionAdmin();
+  window.addEventListener('online', sincronizarPendientes);
+
+  /* PWA: registro de Service Worker + banners de instalacion (mismo patron que app/) */
+  const CLAVE_BANNER_INSTALAR_OCULTO = 'wm_transporte_admin_banner_instalar_oculto';
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(err => console.warn('No se pudo registrar el Service Worker:', err));
+    });
+  }
+
+  function estaInstalada() {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  }
+
+  function bannerOculto(variante) {
+    try { return localStorage.getItem(CLAVE_BANNER_INSTALAR_OCULTO + '_' + variante) === '1'; }
+    catch (e) { return false; }
+  }
+
+  function cerrarBannerInstalar(variante) {
+    document.getElementById('banner-instalar-' + variante).style.display = 'none';
+    try { localStorage.setItem(CLAVE_BANNER_INSTALAR_OCULTO + '_' + variante, '1'); } catch (e) {}
+  }
+
+  let promptDeInstalacionDiferido = null;
+
+  window.addEventListener('beforeinstallprompt', (evento) => {
+    evento.preventDefault();
+    promptDeInstalacionDiferido = evento;
+    if (!estaInstalada() && !bannerOculto('android')) {
+      document.getElementById('banner-instalar-android').style.display = 'flex';
+    }
+  });
+
+  function instalarPWA() {
+    if (!promptDeInstalacionDiferido) return;
+    promptDeInstalacionDiferido.prompt();
+    promptDeInstalacionDiferido.userChoice.finally(() => {
+      promptDeInstalacionDiferido = null;
+      cerrarBannerInstalar('android');
+    });
+  }
+
+  window.addEventListener('appinstalled', () => cerrarBannerInstalar('android'));
+
+  /* Notificaciones push (Fase 14). Requiere VAPID_PUBLIC_KEY configurada y
+     la Edge Function desplegada -- ver CAMBIOS-FASE14.md. */
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  }
+
+  async function mostrarCardNotificacionesSiAplica() {
+    const card = document.getElementById('card-notificaciones-admin');
+    if (!card) return;
+    const soportado = 'serviceWorker' in navigator && 'PushManager' in window;
+    const configurado = VAPID_PUBLIC_KEY && !VAPID_PUBLIC_KEY.includes('TU-VAPID');
+    if (!soportado || !configurado || !supabaseClient) return;
+
+    const registro = await navigator.serviceWorker.ready.catch(() => null);
+    const yaSuscrito = registro ? await registro.pushManager.getSubscription() : null;
+    if (!yaSuscrito) card.style.display = 'block';
+  }
+
+  async function suscribirNotificacionesAdmin() {
+    const estado = document.getElementById('estado-notificaciones-admin');
+    estado.textContent = 'Solicitando permiso...';
+    estado.className = 'seguimiento-estado';
+    try {
+      const permiso = await Notification.requestPermission();
+      if (permiso !== 'granted') {
+        estado.textContent = 'No se concedio el permiso de notificaciones.';
+        estado.className = 'seguimiento-estado error';
+        return;
+      }
+      const registro = await navigator.serviceWorker.ready;
+      const suscripcion = await registro.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+      const json = suscripcion.toJSON();
+      const { error } = await supabaseClient.from(NOMBRE_TABLA_PUSH).upsert({
+        rol: 'admin',
+        endpoint: json.endpoint,
+        p256dh: json.keys.p256dh,
+        auth_key: json.keys.auth,
+        activo: true,
+      }, { onConflict: 'endpoint' });
+      if (error) throw error;
+      estado.textContent = 'Notificaciones activadas en este dispositivo.';
+      estado.className = 'seguimiento-estado ok';
+      document.getElementById('card-notificaciones-admin').style.display = 'none';
+    } catch (e) {
+      console.warn('No se pudo activar notificaciones:', e);
+      estado.textContent = 'No se pudo activar. Intenta de nuevo.';
+      estado.className = 'seguimiento-estado error';
+    }
+  }
+
+  mostrarCardNotificacionesSiAplica();
+
+  (function mostrarBannerIOSSiAplica() {
+    const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+    if (esIOS && !estaInstalada() && !bannerOculto('ios')) {
+      document.getElementById('banner-instalar-ios').style.display = 'flex';
+    }
+  })();
 
   /* ════════════════════════════════
      GENERACIÓN DE QR — un solo QR, sin selector de CEDIS
@@ -2097,7 +2516,7 @@
     areasEl.innerHTML = filasArea.length
       ? filasArea.map(([area, n]) => `
           <div style="display:flex; justify-content:space-between; font-size:0.82rem; padding:4px 0; border-bottom:1px dashed var(--border);">
-            <span>${area}</span>
+            <span>${escapeHtml(area)}</span>
             <span style="font-weight:700; color:var(--dark);">${n}</span>
           </div>
         `).join('')
@@ -2127,12 +2546,12 @@
       return `
         <div class="historial-item">
           <div class="historial-top">
-            <span>${a.nombre} — No. ${a.numero_asociado}</span>
+            <span>${escapeHtml(a.nombre)} — No. ${escapeHtml(a.numero_asociado)}</span>
             <span class="badge-estatus" style="background:${activo ? '#16a34a22' : '#64748b22'}; color:${activo ? '#16a34a' : '#64748b'};">
               ${activo ? '✅ Activo' : '⛔ Inactivo'}
             </span>
           </div>
-          <div class="historial-desc">${a.area || 'Sin área'} · ${a.celular || 'Sin celular'}</div>
+          <div class="historial-desc">${escapeHtml(a.area || 'Sin área')} · ${escapeHtml(a.celular || 'Sin celular')}</div>
           <div class="historial-estatus-editor" style="border-top:none; padding-top:8px;">
             <button type="button" class="btn-guardar-seguimiento" style="margin-top:0;"
               onclick="editarAsociadoPorNumero('${a.numero_asociado}')">✏️ Editar</button>

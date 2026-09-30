@@ -1,0 +1,17 @@
+{
+  "name": "TransQR - Reporte de Transporte",
+  "short_name": "TransQR",
+  "description": "Reporta eventualidades de tu transporte de personal en CEDIS Walmart Villahermosa.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f0f4f9",
+  "theme_color": "#0071CE",
+  "lang": "es-MX",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
