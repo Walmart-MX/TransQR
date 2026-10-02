@@ -72,10 +72,25 @@ externa nueva:
 ### Pasos que faltan por hacer del lado de Supabase (no se pueden hacer sin tus credenciales de servicio)
 
 1. Correr `fase14-notificaciones-push.sql` en el SQL Editor.
-2. Generar un par de llaves VAPID (gratis, una sola vez):
-   `npx web-push generate-vapid-keys`.
+2. Generar un par de llaves VAPID (gratis, una sola vez). Dos formas, elige
+   la que tengas disponible:
+   - Con Node: `npx web-push generate-vapid-keys`.
+   - Sin Node (esta maquina no lo tiene instalado), con Python +
+     `cryptography` (ya viene en este entorno): genera un par EC P-256,
+     codifica ambas mitades en base64url sin padding (formato RFC 8292,
+     identico al que produce `web-push`). Si algun dia hay que rotarlas,
+     se repite este mismo calculo.
+   - **Ya se generaron unas llaves reales para este proyecto y YA ESTAN
+     aplicadas** (ver estado al final de esta seccion). La publica ya
+     quedo pegada en `app/index.html` y `admin/index.html`. La privada
+     **nunca se escribio en ningun archivo del repo** -- solo vivio en el
+     chat el tiempo necesario para correr `supabase secrets set`, y de ahi
+     en adelante solo existe dentro de Supabase (los secretos de una Edge
+     Function no se pueden volver a leer en texto plano ni con la propia
+     CLI, solo reemplazar). Si necesitas rotarla algun dia, se genera un
+     par nuevo y se vuelve a correr `supabase secrets set`.
 3. Configurar secretos de la funcion:
-   `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:tu-correo VAPID_SUBJECT=mailto:... WEBHOOK_SECRET=un-texto-largo-al-azar`.
+   `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:tu-correo WEBHOOK_SECRET=un-texto-largo-al-azar`.
 4. Desplegar: `supabase functions deploy notificar-push --no-verify-jwt`
    (el `--no-verify-jwt` es porque quien la llama es el Webhook de
    Supabase, no un usuario logueado).
@@ -84,13 +99,50 @@ externa nueva:
    funcion desplegada, con el header `x-webhook-secret` = el mismo valor
    que pusiste en `WEBHOOK_SECRET` (asi la funcion rechaza cualquier
    llamada que no venga de tu propio Webhook).
-6. Pegar la llave publica de VAPID en `VAPID_PUBLIC_KEY` dentro de
-   `app/index.html` y `admin/index.html` (reemplazar
-   `'TU-VAPID-PUBLIC-KEY-AQUI'`).
+6. ~~Pegar la llave publica de VAPID en `VAPID_PUBLIC_KEY`~~ -- **ya hecho**,
+   la llave publica de arriba ya esta en ambos archivos.
 
-Mientras el paso 6 no este hecho, el boton "Activar notificaciones" ni
-siquiera aparece (la app detecta la llave placeholder y no ofrece la
-opcion) -- no hay riesgo de que alguien intente activarlo a medias.
+### Estado real al cierre de esta fase (corrido desde la CLI, en vivo)
+
+- [x] Paso 1 -- `fase14-notificaciones-push.sql` corrido contra el proyecto
+      real (via `supabase link` + Management API). Tabla `push_subscriptions`
+      confirmada con una consulta de verificacion.
+- [x] Paso 2 -- llaves VAPID generadas (metodo Python, ver arriba).
+- [x] Paso 3 -- los 4 secretos (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`,
+      `VAPID_SUBJECT`, `WEBHOOK_SECRET`) configurados con
+      `supabase secrets set` y confirmados con `supabase secrets list`.
+- [x] Paso 4 -- `notificar-push` desplegada con
+      `supabase functions deploy --no-verify-jwt` (no hizo falta Docker).
+- [x] **Paso 5 -- HECHO, via SQL directo (no se necesito el Dashboard).**
+      El intento inicial fallo porque el esquema `supabase_functions` no
+      existia (ver mas abajo). En vez de usar el boton del Dashboard, se
+      investigo la causa real: faltaba la extension `pg_net`. Se instalo
+      (`create extension pg_net`), se reviso la firma real de
+      `net.http_post` en esta version especifica antes de escribir nada
+      (no se adivino de memoria), se recreo la funcion
+      `supabase_functions.http_request()` y se crearon los 2 triggers
+      (`reportes_transporte_webhook_insert`/`_update`) sobre
+      `reportes_transporte`. Todo esto quedo documentado, reproducible y
+      con el secreto reemplazado por un placeholder, en
+      `fase14b-webhook-trigger.sql`.
+      **Prueba real de punta a punta:** se inserto un reporte de prueba
+      (`num_empleado = 'TEST-WEBHOOK'`), se confirmo en
+      `net._http_response` que el trigger de INSERT disparo la funcion y
+      respondio `200 OK`; se actualizo el `estatus` de ese mismo reporte y
+      se confirmo el mismo `200 OK` para el trigger de UPDATE; despues se
+      borro el reporte de prueba. El pipeline completo (trigger -> Edge
+      Function -> respuesta) esta verificado en el proyecto real, no solo
+      en teoria.
+- [x] Paso 6 -- llave publica ya pegada en ambos `index.html`.
+
+Con esto, **las 6 piezas de infraestructura de notificaciones push ya
+estan funcionando en el proyecto real** -- lo unico que falta para que
+alguien reciba un push de verdad es que un asociado o un admin presione
+"Activar notificaciones" al menos una vez (eso llena `push_subscriptions`,
+que hoy esta vacia).
+
+
+
 
 ### Limitacion de iOS (no es un bug, es una restriccion de Apple)
 
@@ -167,8 +219,8 @@ plan de migracion de la auditoria, Fase 5 y 6).
 
 - Nuevos: `app/manifest.json`, `app/sw.js`, `app/icons/*.png`,
   `admin/manifest.json`, `admin/sw.js`, `admin/icons/*.png`,
-  `fase14-notificaciones-push.sql`, `supabase/functions/notificar-push/index.ts`,
-  `CAMBIOS-FASE14.md`.
+  `fase14-notificaciones-push.sql`, `fase14b-webhook-trigger.sql`,
+  `supabase/functions/notificar-push/index.ts`, `CAMBIOS-FASE14.md`.
 - Modificados: `app/index.html` (head PWA, banner instalacion, boton
   notificaciones, escapeHtml en Mis Reportes, reintento offline al
   reconectar), `admin/index.html` (head PWA, banner instalacion, boton
