@@ -1,5 +1,55 @@
 # Fase 14 -- PWA (asociado + admin), notificaciones push, seguridad y limpieza
 
+## Fase 14d -- Sesion de depuracion real (push + tiempo real)
+
+Despues del despliegue inicial, se probo en vivo y aparecieron 3 cosas por
+resolver. Diagnostico y arreglo de cada una:
+
+1. **El admin SI pudo activar notificaciones, el asociado NO.** La causa
+   mas probable: en iPhone, Apple solo permite Web Push si la app ya fue
+   agregada a la pantalla de inicio (estandalone) -- en una pestana normal
+   de Safari la suscripcion falla aunque el boton se vea. Se agrego una
+   validacion explicita que detecta ese caso ANTES de intentar suscribir y
+   muestra un mensaje claro ("agrega esta app a tu pantalla de inicio
+   primero") en vez de un error generico. Tambien se mejoro el mensaje de
+   error en ambos archivos (`app/index.html` y `admin/index.html`) para que
+   muestre el motivo real (`e.name` + `e.message`) en vez de "No se pudo
+   activar, intenta de nuevo" -- la proxima vez que algo falle, el mensaje
+   en pantalla va a decir por que.
+2. **No llego la notificacion push esperada.** Se investigo de punta a
+   punta insertando un reporte de prueba real contra el proyecto (borrado
+   despues) y leyendo la respuesta de la Edge Function (se reescribio para
+   devolver un diagnostico JSON detallado en vez de un simple "OK", visible
+   en `net._http_response.content`). Resultado: **la funcion SI mando el
+   push y FCM (el servicio de Google detras de Chrome/Edge) lo acepto sin
+   error** (`{"ok":true,"detalle":"enviado"}`). Es decir, todo el lado del
+   servidor (trigger -> Edge Function -> VAPID -> FCM) funciona. Si no se
+   vio la notificacion en pantalla, el punto a revisar ahora es el lado del
+   sistema operativo/navegador de ese dispositivo especifico: permisos de
+   notificacion de Windows para Edge/Chrome, Focus Assist/"No molestar", o
+   que la notificacion haya caido silenciosa al Centro de actividades en
+   vez de mostrar banner. No es algo que se arregle con mas codigo del lado
+   del proyecto.
+3. **"Tenia que actualizar manualmente", se pidio lo mas en tiempo real
+   posible.** Aclaracion importante: esto NO es una limitante de GitHub
+   Pages -- el hosting estatico solo afecta los archivos HTML/CSS/JS, los
+   datos siempre fueron dinamicos (Supabase). Se agrego:
+   - **Admin:** suscripcion real a Supabase Realtime
+     (`postgres_changes` sobre `reportes_transporte`, ver
+     `fase14c-realtime.sql`) -- en cuanto hay un INSERT/UPDATE/DELETE en
+     cualquier reporte, el Historial (indicadores + lista o tendencia,
+     segun lo que este viendo) se refresca solo, sin recargar la pagina.
+     Esto es ademas e independiente del push: mientras el panel este
+     abierto, esto es instantaneo.
+   - **Asociado:** Realtime **no es posible aqui a proposito** --
+     `reportes_transporte` no tiene politica de SELECT para `anon` (RLS
+     evita que un asociado pueda ver reportes ajenos), y Realtime respeta
+     RLS. En su lugar, "Mis Reportes" se refresca solo cada 25 segundos
+     mientras esa pestana este abierta, y de inmediato al volver a la app
+     (evento `visibilitychange`). Combinado con el push (que avisa aunque
+     la app este cerrada), cubre el mismo objetivo sin abrir una via para
+     ver datos de otros asociados.
+
 Complementa a `ARQUITECTURA.md`, `CAMBIOS-FASE12.md` y `CAMBIOS-FASE13.md`
 (no los reemplaza). Resultado de la auditoria completa pedida antes de tocar
 codigo (ver el diagnostico entregado en la conversacion: viabilidad, que se
@@ -220,7 +270,8 @@ plan de migracion de la auditoria, Fase 5 y 6).
 - Nuevos: `app/manifest.json`, `app/sw.js`, `app/icons/*.png`,
   `admin/manifest.json`, `admin/sw.js`, `admin/icons/*.png`,
   `fase14-notificaciones-push.sql`, `fase14b-webhook-trigger.sql`,
-  `supabase/functions/notificar-push/index.ts`, `CAMBIOS-FASE14.md`.
+  `fase14c-realtime.sql`, `supabase/functions/notificar-push/index.ts`,
+  `CAMBIOS-FASE14.md`.
 - Modificados: `app/index.html` (head PWA, banner instalacion, boton
   notificaciones, escapeHtml en Mis Reportes, reintento offline al
   reconectar), `admin/index.html` (head PWA, banner instalacion, boton

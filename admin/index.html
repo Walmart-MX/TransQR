@@ -1179,6 +1179,27 @@
     document.getElementById('app-admin-contenido').style.display = 'block';
     iniciarVigilanciaInactividad();
     inicializarPanelAdmin();
+    suscribirRealtimeHistorial();
+  }
+
+  /* Tiempo real (Fase 14c): en cuanto hay un INSERT/UPDATE/DELETE en
+     reportes_transporte, se refresca solo -- sin esperar a que alguien
+     recargue la pagina. Esto es independiente de las notificaciones push:
+     mientras el panel este abierto, esto es mas inmediato que el push
+     (que depende del navegador/SO); el push sigue siendo necesario para
+     cuando el panel esta cerrado. Requiere que la tabla este agregada a la
+     publicacion `supabase_realtime` (ver fase14c-realtime.sql).*/
+  function suscribirRealtimeHistorial() {
+    if (!supabaseClient) return;
+    supabaseClient
+      .channel('admin-reportes-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: NOMBRE_TABLA }, () => {
+        actualizarIndicadoresHistorial();
+        const panelVisible = document.getElementById('panel-historial').classList.contains('active');
+        if (panelVisible && vistaHistorialActiva === 'lista') renderizarHistorial();
+        if (panelVisible && vistaHistorialActiva === 'tendencia') renderizarTendencia();
+      })
+      .subscribe();
   }
 
   function formatearSituaciones(situaciones) {
@@ -2207,7 +2228,8 @@
       document.getElementById('card-notificaciones-admin').style.display = 'none';
     } catch (e) {
       console.warn('No se pudo activar notificaciones:', e);
-      estado.textContent = 'No se pudo activar. Intenta de nuevo.';
+      const detalle = (e && (e.message || e.name)) ? `${e.name || ''}: ${e.message || ''}`.trim() : 'error desconocido';
+      estado.textContent = `No se pudo activar (${detalle}).`;
       estado.className = 'seguimiento-estado error';
     }
   }

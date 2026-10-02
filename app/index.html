@@ -2098,6 +2098,26 @@
   sincronizarPendientes();
   window.addEventListener('online', sincronizarPendientes);
 
+  /* "Tiempo real" para Mis Reportes (Fase 14c): reportes_transporte es
+     intencionalmente privada por RLS (el asociado no puede hacer SELECT
+     directo, ni siquiera via Realtime, para no poder ver reportes ajenos) --
+     por eso aqui no se puede usar postgres_changes como en el admin. En vez
+     de eso: se refresca solo cada 25s mientras esta pestana este abierta, y
+     de inmediato si el usuario regresa a la app (cambia de pestana/la
+     reabre). Combinado con el push (que avisa aunque la app este cerrada),
+     cubre el mismo objetivo sin exponer datos de otros asociados. */
+  setInterval(() => {
+    if (document.getElementById('panel-misreportes').classList.contains('active')) {
+      renderizarMisReportes();
+    }
+  }, 25000);
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && document.getElementById('panel-misreportes').classList.contains('active')) {
+      renderizarMisReportes();
+    }
+  });
+
   /* PWA: registro de Service Worker + banners de instalacion */
   const CLAVE_BANNER_INSTALAR_OCULTO = 'wm_transporte_banner_instalar_oculto';
 
@@ -2168,12 +2188,20 @@
     const estado = document.getElementById('estado-notificaciones-asociado');
     const sesion = obtenerSesionAsociado();
     if (!sesion || !sesion.numEmpleado) return;
+
+    const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+    if (esIOS && !estaInstalada()) {
+      estado.textContent = 'En iPhone, Apple solo permite notificaciones si primero agregas esta app a tu pantalla de inicio (boton Compartir -> Agregar a inicio). Instalala y vuelve a intentar desde el icono.';
+      estado.className = 'seguimiento-estado error';
+      return;
+    }
+
     estado.textContent = 'Solicitando permiso...';
     estado.className = 'seguimiento-estado';
     try {
       const permiso = await Notification.requestPermission();
       if (permiso !== 'granted') {
-        estado.textContent = 'No se concedio el permiso de notificaciones.';
+        estado.textContent = 'No se concedio el permiso de notificaciones (revisa los permisos del sitio en tu navegador).';
         estado.className = 'seguimiento-estado error';
         return;
       }
@@ -2197,7 +2225,8 @@
       document.getElementById('card-notificaciones-asociado').style.display = 'none';
     } catch (e) {
       console.warn('No se pudo activar notificaciones:', e);
-      estado.textContent = 'No se pudo activar. Intenta de nuevo.';
+      const detalle = (e && (e.message || e.name)) ? `${e.name || ''}: ${e.message || ''}`.trim() : 'error desconocido';
+      estado.textContent = `No se pudo activar (${detalle}). Si estas en iPhone, recuerda instalar la app primero.`;
       estado.className = 'seguimiento-estado error';
     }
   }
