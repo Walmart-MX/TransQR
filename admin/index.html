@@ -120,6 +120,57 @@
     margin-bottom: -2px; color: var(--muted); transition: color 0.2s, border-color 0.2s; letter-spacing: .02em; white-space:nowrap;
   }
   .tab.active { color: var(--blue); border-color: var(--blue); }
+
+  /* ==== Navegacion inferior movil (sustituye las tabs de arriba en pantallas
+     chicas; ver seccion 11.1 de la auditoria UX) ==== */
+  .bottom-nav { display: none; }
+  @media (max-width: 720px) {
+    #tabs-desktop { display: none; }
+    body { padding-bottom: 64px; }
+    .bottom-nav {
+      display: flex;
+      position: fixed; left: 0; right: 0; bottom: 0;
+      background: white; border-top: 1px solid var(--border);
+      box-shadow: 0 -2px 14px rgba(0,0,0,0.1);
+      padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+      z-index: 500;
+    }
+    .bn-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+      background: none; border: none; color: var(--muted); font-family: inherit;
+      font-size: 0.64rem; font-weight: 700; padding: 6px 2px; cursor: pointer; border-radius: 10px;
+      min-height: 52px; justify-content: center;
+    }
+    .bn-item.active { color: var(--blue); }
+    .bn-item svg { width: 22px; height: 22px; flex-shrink: 0; }
+
+    /* Objetivos tactiles de al menos 44px (seccion 11.1 de la auditoria UX):
+       estos elementos usaban tamanios pensados para mouse, no para dedo. */
+    .historial-estatus-editor { flex-direction: column; align-items: stretch; gap: 6px; }
+    .historial-estatus-editor select { padding: 11px 10px; font-size: 0.86rem; min-height: 44px; }
+    .btn-guardar-seguimiento { padding: 13px; font-size: 0.86rem; min-height: 46px; }
+    .historial-resumen { padding: 2px 0; }
+    .tab { padding: 14px 18px; }
+    .chip { min-height: 38px; }
+  }
+
+  .hoja-overlay {
+    position: fixed; inset: 0; background: rgba(0,48,135,0.5); z-index: 900;
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .hoja-panel {
+    background: white; width: 100%; max-width: 480px; border-radius: 18px 18px 0 0;
+    padding: 10px 10px calc(16px + env(safe-area-inset-bottom));
+    box-shadow: 0 -8px 30px rgba(0,0,0,0.2);
+    animation: slideUp 0.25s ease;
+  }
+  .hoja-handle { width: 40px; height: 4px; background: var(--border); border-radius: 4px; margin: 6px auto 14px; }
+  .hoja-item {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border: none;
+    padding: 14px 10px; font-size: 0.95rem; font-weight: 700; color: var(--text);
+    border-bottom: 1px solid var(--border); font-family: inherit; cursor: pointer; min-height: 48px;
+  }
+  .hoja-item:last-child { border-bottom: none; }
   .panel { display: none; padding: 20px 16px 48px; max-width: 680px; margin: 0 auto; }
   .panel.active { display: block; }
   .card {
@@ -210,6 +261,22 @@
   .historial-nota { font-size: 0.72rem; color: var(--muted); line-height: 1.5; margin: -6px 0 14px; }
   .historial-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
   .historial-tag { background: #eef5fd; color: var(--blue); font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+  .historial-resumen {
+    display: flex; align-items: flex-start; gap: 8px; width: 100%; text-align: left;
+    background: none; border: none; padding: 0; font-family: inherit; cursor: pointer; color: inherit;
+    min-height: 44px;
+  }
+  .historial-resumen-texto { flex: 1; min-width: 0; }
+  .historial-desc-resumen {
+    color: var(--muted); font-size: 0.76rem;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    line-clamp: 2; overflow: hidden;
+  }
+  .historial-desc-completa { color: var(--text); font-size: 0.82rem; line-height: 1.5; margin: 8px 0; white-space: pre-wrap; word-break: break-word; }
+  .historial-badges-resumen { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+  .historial-chevron { flex-shrink: 0; color: var(--muted); font-size: 0.9rem; transition: transform 0.2s; padding-top: 2px; }
+  .historial-item-abierto .historial-chevron { transform: rotate(180deg); }
+  .historial-gestion { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
   .historial-item-alerta-advertencia { border-color: #d97706; background: #fffbeb; }
   .historial-item-alerta-critica { border-color: var(--error); background: #fef2f2; box-shadow: 0 0 0 1px var(--error) inset; }
   .badge-antiguedad { display: inline-block; margin-top: 5px; font-size: 0.68rem; font-weight: 800; padding: 2px 9px; border-radius: 999px; }
@@ -404,16 +471,44 @@
   </div>
 </div>
 
-<div class="tabs">
-  <div class="tab active" onclick="showTab('qr')">📱 Generar / Imprimir QR</div>
-  <div class="tab" onclick="showTab('asociados')">👥 Asociados</div>
-  <div class="tab" onclick="showTab('rutas')">🛣️ Rutas y Paradas</div>
-  <div class="tab" onclick="showTab('lt')">🚌 LT Transportista</div>
-  <div class="tab" onclick="showTab('servicio')">📊 Nivel de Servicio</div>
-  <div class="tab" onclick="showTab('historial')">🔒 Historial y Seguimiento</div>
+<div class="tabs" id="tabs-desktop">
+  <div class="tab" data-tab="qr" onclick="showTab('qr')">Generar / Imprimir QR</div>
+  <div class="tab" data-tab="asociados" onclick="showTab('asociados')">Asociados</div>
+  <div class="tab" data-tab="rutas" onclick="showTab('rutas')">Rutas y Paradas</div>
+  <div class="tab" data-tab="lt" onclick="showTab('lt')">LT Transportista</div>
+  <div class="tab" data-tab="servicio" onclick="showTab('servicio')">Nivel de Servicio</div>
+  <div class="tab active" data-tab="historial" onclick="showTab('historial')">Historial y Seguimiento</div>
 </div>
 
-<div class="panel active" id="panel-qr">
+<nav class="bottom-nav">
+  <button type="button" class="bn-item active" data-tab="historial" onclick="showTab('historial')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><line x1="8" y1="8" x2="16" y2="8"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="8" y1="16" x2="12" y2="16"></line></svg>
+    <span>Historial</span>
+  </button>
+  <button type="button" class="bn-item" data-tab="servicio" onclick="showTab('servicio')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="20" x2="5" y2="11"></line><line x1="12" y1="20" x2="12" y2="5"></line><line x1="19" y1="20" x2="19" y2="14"></line></svg>
+    <span>Servicio</span>
+  </button>
+  <button type="button" class="bn-item" data-tab="asociados" onclick="showTab('asociados')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.2"></circle><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"></path></svg>
+    <span>Asociados</span>
+  </button>
+  <button type="button" class="bn-item" id="bn-mas" onclick="abrirMasOpciones()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg>
+    <span>Mas</span>
+  </button>
+</nav>
+
+<div class="hoja-overlay" id="mas-opciones-overlay" style="display:none;" onclick="if(event.target===this) cerrarMasOpciones();">
+  <div class="hoja-panel">
+    <div class="hoja-handle"></div>
+    <button type="button" class="hoja-item" onclick="showTab('qr')">Generar / Imprimir QR</button>
+    <button type="button" class="hoja-item" onclick="showTab('rutas')">Rutas y Paradas</button>
+    <button type="button" class="hoja-item" onclick="showTab('lt')">LT Transportista</button>
+  </div>
+</div>
+
+<div class="panel" id="panel-qr">
   <div class="qr-page">
 
     <!-- Ya no hay selector de CEDIS: esta app es solo para CEDIS Villahermosa. -->
@@ -814,7 +909,7 @@
 
 </div>
 
-<div class="panel" id="panel-historial">
+<div class="panel active" id="panel-historial">
 
   <div class="panel-header-row">
     <h2>🗂️ Historial y Seguimiento</h2>
@@ -871,8 +966,8 @@
       </div>
 
       <div class="field" style="margin-top:14px; margin-bottom:0;">
-        <label>Buscar por asociado (nombre o No. de empleado)</label>
-        <input type="text" id="filtro-asociado" placeholder="Ej. Jaime o 8155457"
+        <label>Buscar por asociado o folio</label>
+        <input type="text" id="filtro-asociado" placeholder="Nombre, No. de empleado o folio completo"
           oninput="cambiarFiltroAsociado()">
       </div>
     </div>
@@ -1060,11 +1155,11 @@
   }
 
   function showTab(name) {
-    document.querySelectorAll('.tab').forEach((t, i) =>
-      t.classList.toggle('active', ['qr', 'asociados', 'rutas', 'lt', 'servicio', 'historial'][i] === name)
-    );
+    document.querySelectorAll('[data-tab]').forEach(el => el.classList.toggle('active', el.dataset.tab === name));
+    document.getElementById('bn-mas')?.classList.toggle('active', ['qr', 'rutas', 'lt'].includes(name));
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.getElementById('panel-' + name).classList.add('active');
+    cerrarMasOpciones();
 
     if (name === 'asociados') renderizarAsociados();
     if (name === 'rutas') renderizarRutas();
@@ -1075,6 +1170,15 @@
       if (vistaHistorialActiva === 'tendencia') renderizarTendencia();
       else renderizarHistorial();
     }
+  }
+
+  function abrirMasOpciones() {
+    document.getElementById('mas-opciones-overlay').style.display = 'flex';
+  }
+
+  function cerrarMasOpciones() {
+    const overlay = document.getElementById('mas-opciones-overlay');
+    if (overlay) overlay.style.display = 'none';
   }
 
   /* ════════════════════════════════
@@ -1180,6 +1284,32 @@
     iniciarVigilanciaInactividad();
     inicializarPanelAdmin();
     suscribirRealtimeHistorial();
+    manejarDeepLinkFolio();
+  }
+
+  /* Abre directo un reporte cuando se llega desde una notificacion push
+     (url `./?folio=...`, ver supabase/functions/notificar-push). Sin esto,
+     el parametro se ignoraba por completo y la notificacion solo abria el
+     panel en la vista por defecto. */
+  function manejarDeepLinkFolio() {
+    const params = new URLSearchParams(location.search);
+    const folio = params.get('folio');
+    if (!folio) return;
+
+    showTab('historial');
+    const chipTodo = document.querySelector('#chip-filtro-historial .chip[data-filtro="todo"]');
+    if (chipTodo) aplicarFiltroRapido(chipTodo, 'todo');
+
+    document.getElementById('filtro-asociado').value = folio;
+    filtroAsociadoTexto = folio;
+
+    renderizarHistorial().then(() => {
+      const panel = document.getElementById('gestion-' + folio);
+      if (panel && panel.style.display === 'none') toggleGestionReporte(folio);
+      panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    history.replaceState(null, '', location.pathname + location.hash);
   }
 
   /* Tiempo real (Fase 14c): en cuanto hay un INSERT/UPDATE/DELETE en
@@ -1800,7 +1930,12 @@
     if (filtroTipoReporteActivo !== 'todos') consulta = consulta.eq('tipo_reporte', filtroTipoReporteActivo);
     if (filtroEstatusActivo !== 'todos') consulta = consulta.eq('estatus', filtroEstatusActivo);
     if (filtroAsociadoTexto) {
-      consulta = consulta.or(`nombre.ilike.%${filtroAsociadoTexto}%,num_empleado.ilike.%${filtroAsociadoTexto}%`);
+      const pareceFolioCompleto = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(filtroAsociadoTexto);
+      if (pareceFolioCompleto) {
+        consulta = consulta.eq('folio', filtroAsociadoTexto);
+      } else {
+        consulta = consulta.or(`nombre.ilike.%${filtroAsociadoTexto}%,num_empleado.ilike.%${filtroAsociadoTexto}%`);
+      }
     }
     consulta = consulta.order('fecha', { ascending: false }).order('hora', { ascending: false });
 
@@ -1933,37 +2068,62 @@
     lista.innerHTML = pagina.map(r => {
       const nivelAlerta = nivelAlertaAntiguedad(r);
       const claseAlerta = nivelAlerta ? ` historial-item-alerta-${nivelAlerta}` : '';
+      const estatusInfo = ESTATUS_CATALOGO[r.estatus || 'Enviado'] || ESTATUS_CATALOGO['Enviado'];
+      const idGestion = `gestion-${r.folio}`;
       return `
       <div class="historial-item${claseAlerta}">
-        <div class="historial-top">
-          <span>${escapeHtml(r.fecha)} · ${escapeHtml(r.hora)} · ${CEDIS_NOMBRE}</span>
-          <span class="historial-tipo">${escapeHtml(r.tipo_reporte)}</span>
-        </div>
-        <div class="historial-desc">${escapeHtml(r.nombre)} — ${escapeHtml(r.descripcion)}</div>
-        ${(r.situaciones && r.situaciones.length) ? `
-          <div class="historial-tags">
-            ${r.situaciones.map(v => `<span class="historial-tag">${escapeHtml((SITUACIONES_CATALOGO.find(s => s.valor === v) || {}).etiqueta || v)}</span>`).join('')}
-          </div>` : ''}
-        ${badgeAntiguedadHTML(r)}
-        ${badgeRecurrenteHTML(r)}
+        <button type="button" class="historial-resumen" onclick="toggleGestionReporte('${r.folio}')" aria-expanded="false" aria-controls="${idGestion}">
+          <div class="historial-resumen-texto">
+            <div class="historial-top">
+              <span>${escapeHtml(r.fecha)} · ${escapeHtml(r.hora)}</span>
+              <span class="historial-tipo">${escapeHtml(r.tipo_reporte)}</span>
+            </div>
+            <div class="historial-desc historial-desc-resumen">${escapeHtml(r.nombre)} — ${escapeHtml(r.descripcion)}</div>
+            <div class="historial-badges-resumen">
+              <span class="badge-estatus" style="background:${estatusInfo.color}22; color:${estatusInfo.color};">${estatusInfo.etiqueta}</span>
+            </div>
+            ${badgeAntiguedadHTML(r)}
+            ${badgeRecurrenteHTML(r)}
+          </div>
+          <span class="historial-chevron">▾</span>
+        </button>
 
-        <div class="historial-estatus-editor">
-          <label for="estatus-${r.folio}">Estatus:</label>
-          <select id="estatus-${r.folio}">
-            ${Object.keys(ESTATUS_CATALOGO).map(clave => `
-              <option value="${clave}" ${clave === (r.estatus || 'Enviado') ? 'selected' : ''}>${ESTATUS_CATALOGO[clave].etiqueta}</option>
-            `).join('')}
-          </select>
+        <div class="historial-gestion" id="${idGestion}" style="display:none;">
+          <div class="historial-desc-completa">${escapeHtml(r.nombre)} — ${escapeHtml(r.descripcion)}</div>
+          ${(r.situaciones && r.situaciones.length) ? `
+            <div class="historial-tags">
+              ${r.situaciones.map(v => `<span class="historial-tag">${escapeHtml((SITUACIONES_CATALOGO.find(s => s.valor === v) || {}).etiqueta || v)}</span>`).join('')}
+            </div>` : ''}
+
+          <div class="historial-estatus-editor">
+            <label for="estatus-${r.folio}">Estatus:</label>
+            <select id="estatus-${r.folio}">
+              ${Object.keys(ESTATUS_CATALOGO).map(clave => `
+                <option value="${clave}" ${clave === (r.estatus || 'Enviado') ? 'selected' : ''}>${ESTATUS_CATALOGO[clave].etiqueta}</option>
+              `).join('')}
+            </select>
+          </div>
+          <div class="field" style="margin-top:8px;">
+            <label style="font-size:0.72rem; margin-bottom:4px;">Mensaje para el asociado (opcional, se ve en "Mis Reportes")</label>
+            <textarea id="comentario-${r.folio}" maxlength="240" placeholder="Ej. Ya estamos coordinando con la línea de transporte, en breve tendrás una respuesta.">${escapeHtml(r.comentario_seguimiento || '')}</textarea>
+          </div>
+          <button type="button" class="btn-guardar-seguimiento" id="btn-guardar-${r.folio}" onclick="guardarSeguimientoReporte('${r.folio}')">Guardar seguimiento</button>
+          <div class="seguimiento-estado" id="seguimiento-estado-${r.folio}"></div>
         </div>
-        <div class="field" style="margin-top:8px;">
-          <label style="font-size:0.72rem; margin-bottom:4px;">Mensaje para el asociado (opcional, se ve en "Mis Reportes")</label>
-          <textarea id="comentario-${r.folio}" maxlength="240" placeholder="Ej. Ya estamos coordinando con la línea de transporte, en breve tendrás una respuesta.">${escapeHtml(r.comentario_seguimiento || '')}</textarea>
-        </div>
-        <button type="button" class="btn-guardar-seguimiento" id="btn-guardar-${r.folio}" onclick="guardarSeguimientoReporte('${r.folio}')">💾 Guardar seguimiento</button>
-        <div class="seguimiento-estado" id="seguimiento-estado-${r.folio}"></div>
       </div>
     `;
     }).join('');
+  }
+
+  function toggleGestionReporte(folio) {
+    const panel = document.getElementById('gestion-' + folio);
+    if (!panel) return;
+    const abierto = panel.style.display !== 'none';
+    panel.style.display = abierto ? 'none' : 'block';
+    const card = panel.closest('.historial-item');
+    const boton = card ? card.querySelector('.historial-resumen') : null;
+    if (boton) boton.setAttribute('aria-expanded', String(!abierto));
+    if (card) card.classList.toggle('historial-item-abierto', !abierto);
   }
 
   async function guardarSeguimientoReporte(folio) {
