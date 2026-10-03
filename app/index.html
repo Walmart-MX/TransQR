@@ -1275,7 +1275,7 @@
       </div>
       <div class="field">
         <label>Turno <span class="req">*</span></label>
-        <select id="turno">
+        <select id="turno" onchange="marcarFechaTurnoTocadoManualmente()">
           <option>Matutino (06:00–14:00)</option>
           <option>Vespertino (14:00–22:00)</option>
           <option>Nocturno (22:00–06:00)</option>
@@ -1292,7 +1292,7 @@
     <div class="row-2">
       <div class="field">
         <label>Fecha del traslado <span class="req">*</span></label>
-        <input type="date" id="fecha">
+        <input type="date" id="fecha" onchange="marcarFechaTurnoTocadoManualmente()">
       </div>
       <div class="field">
         <label>Hora de reporte</label>
@@ -1838,13 +1838,43 @@
     return `${h12}:${String(m).padStart(2, '0')} ${periodo}`;
   }
 
+  // Bug real detectado en campo (2026-10): fecha/hora/turno se capturaban UNA
+  // sola vez al abrir la app y nunca se refrescaban. Alguien que deja la PWA
+  // abierta desde la tarde y manda un reporte ya pasada la medianoche (muy
+  // comun en turno Nocturno, que cruza de un dia al otro) terminaba mandando
+  // la hora/fecha de cuando ABRIO la app, no la real -- se vio un caso real
+  // con 8 horas de diferencia entre `hora` guardada y el INSERT real en
+  // Supabase. Arreglo: 'hora' se recaptura siempre justo antes de enviar (no
+  // es editable, no hay razon para que quede vieja); 'fecha'/'turno' se
+  // refrescan solos mientras el usuario no los haya tocado a mano (si los
+  // edita para un reporte de un evento anterior, eso se respeta y ya no se
+  // vuelve a pisar).
+  let fechaTurnoTocadoManualmente = false;
+
+  function marcarFechaTurnoTocadoManualmente() {
+    fechaTurnoTocadoManualmente = true;
+  }
+
+  function capturarHoraActual() {
+    const horaActual = new Date().toTimeString().slice(0, 5);
+    document.getElementById('hora').value = horaActual;
+    document.getElementById('hora-reporte-display').textContent = formatearHora12(horaActual);
+  }
+
   function inicializarFechaHoraTurno() {
     const ahora = new Date();
     document.getElementById('fecha').valueAsDate = ahora;
-    const horaActual = ahora.toTimeString().slice(0, 5);
-    document.getElementById('hora').value = horaActual;
-    document.getElementById('hora-reporte-display').textContent = formatearHora12(horaActual);
-    document.getElementById('turno').value = calcularTurno(horaActual);
+    capturarHoraActual();
+    document.getElementById('turno').value = calcularTurno(document.getElementById('hora').value);
+    fechaTurnoTocadoManualmente = false;
+  }
+
+  function refrescarFechaHoraTurnoSiNoTocado() {
+    if (document.getElementById('panel-form').classList.contains('active') && !fechaTurnoTocadoManualmente) {
+      inicializarFechaHoraTurno();
+    } else {
+      capturarHoraActual();
+    }
   }
 
   const CATEGORIAS_REPORTE = [
@@ -1988,6 +2018,7 @@
   }
 
   function recolectarDatos() {
+    capturarHoraActual(); // siempre la hora real de envio, nunca la de cuando se abrio la app
     const camposTexto = ['nombre', 'empleado', 'area', 'celular', 'turno', 'fecha', 'hora', 'unidad', 'ruta', 'descripcion'];
     let valido = true;
 
@@ -2239,6 +2270,7 @@
     if (!document.hidden && document.getElementById('panel-misreportes').classList.contains('active')) {
       renderizarMisReportes();
     }
+    if (!document.hidden) refrescarFechaHoraTurnoSiNoTocado();
   });
 
   /* PWA: registro de Service Worker + banners de instalacion */
