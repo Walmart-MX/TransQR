@@ -233,7 +233,7 @@
   header {
     background: linear-gradient(135deg, var(--dark) 0%, var(--blue) 100%);
     color: white;
-    padding: 16px 20px;
+    padding: calc(16px + env(safe-area-inset-top)) 20px 16px;
     display: flex;
     align-items: center;
     gap: 14px;

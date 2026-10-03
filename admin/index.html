@@ -83,7 +83,7 @@
   .btn-modal-continue:hover   { background: var(--dark); }
   .btn-modal-continue:active  { transform: scale(0.98); }
   header {
-    background: linear-gradient(135deg, var(--dark) 0%, var(--blue) 100%); color: white; padding: 16px 20px;
+    background: linear-gradient(135deg, var(--dark) 0%, var(--blue) 100%); color: white; padding: calc(16px + env(safe-area-inset-top)) 20px 16px;
     display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 16px rgba(0,0,0,0.22);
   }
   .header-spark {
@@ -453,21 +453,6 @@
     <div class="seguimiento-estado" id="password-estado"></div>
     <button class="btn-modal-continue" id="btn-guardar-password" onclick="guardarNuevaPassword()">Guardar contraseña</button>
     <button class="btn-borrar-historial" style="margin-top:8px;" onclick="cerrarCambioPassword()">Cancelar</button>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════
-     AVISO DE SESIÓN POR INACTIVIDAD
-     A los 30 minutos sin actividad (sin mover el mouse, tocar la pantalla o
-     teclear) se cierra la sesión sola y se vuelve a pedir correo/contraseña,
-     para que el panel no quede abierto indefinidamente en un equipo compartido.
-══════════════════════════════════ -->
-<div id="inactividad-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,48,135,0.85); backdrop-filter:blur(6px); z-index:3000; align-items:center; justify-content:center; padding:16px;">
-  <div class="modal-box" style="max-width:360px; text-align:center;">
-    <div class="modal-spark">⏱️</div>
-    <h2 style="font-size:1.1rem; font-weight:800; color:var(--dark); margin-bottom:8px;">Sesión cerrada por inactividad</h2>
-    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:18px;">Por seguridad, cerramos tu sesión después de 30 minutos sin actividad. Inicia sesión de nuevo para continuar.</p>
-    <button class="btn-modal-continue" onclick="document.getElementById('inactividad-overlay').style.display='none';">Entendido</button>
   </div>
 </div>
 
@@ -1182,38 +1167,21 @@
   }
 
   /* ════════════════════════════════
-     LOGIN + CIERRE POR INACTIVIDAD (30 minutos)
-     Además de la sesión real de Supabase Auth, se vigila la actividad del
-     usuario en el navegador: sin mover el mouse, tocar la pantalla, hacer
-     scroll o teclear durante 30 minutos, se cierra la sesión sola y se
-     vuelve a mostrar el login — la sesión de Supabase ya no basta por sí
-     sola para mantener el panel abierto indefinidamente.
+     LOGIN
+     Nota (2026-10): aqui vivia un vigilante de inactividad que forzaba
+     signOut() tras cierto tiempo sin tocar la pantalla. Se quito a peticion
+     explicita -- el panel vive en telefonos personales del admin, no en un
+     equipo compartido del CEDIS, asi que no hay a quien proteger de dejar
+     la sesion abierta. Confirmado con el proyecto real que Supabase Auth
+     en si NO fuerza ningun cierre por tiempo/inactividad
+     (sessions_timebox=0, sessions_inactivity_timeout=0): la sesion ahora
+     dura lo que dure el refresh token guardado en el navegador, hasta que
+     alguien presione "Cerrar sesion" a mano. Si algun dia el panel llega a
+     correr en un equipo compartido, vale la pena revivir este vigilante.
   ════════════════════════════════ */
   let sesionAdmin = null;
-  const INACTIVIDAD_LIMITE_MS = 30 * 60 * 1000; // 30 minutos
-  let temporizadorInactividad = null;
 
-  function reiniciarTemporizadorInactividad() {
-    if (!sesionAdmin) return;
-    clearTimeout(temporizadorInactividad);
-    temporizadorInactividad = setTimeout(cerrarSesionPorInactividad, INACTIVIDAD_LIMITE_MS);
-  }
 
-  function iniciarVigilanciaInactividad() {
-    ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evento =>
-      document.addEventListener(evento, reiniciarTemporizadorInactividad, { passive: true })
-    );
-    reiniciarTemporizadorInactividad();
-  }
-
-  function detenerVigilanciaInactividad() {
-    clearTimeout(temporizadorInactividad);
-  }
-
-  async function cerrarSesionPorInactividad() {
-    await cerrarSesionAdmin();
-    document.getElementById('inactividad-overlay').style.display = 'flex';
-  }
 
   async function verificarSesionAdmin() {
     if (!supabaseClient) {
@@ -1269,7 +1237,6 @@
   }
 
   async function cerrarSesionAdmin() {
-    detenerVigilanciaInactividad();
     if (supabaseClient) await supabaseClient.auth.signOut();
     sesionAdmin = null;
     document.getElementById('app-admin-contenido').style.display = 'none';
@@ -1281,7 +1248,6 @@
   function mostrarPanelAdmin() {
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('app-admin-contenido').style.display = 'block';
-    iniciarVigilanciaInactividad();
     inicializarPanelAdmin();
     suscribirRealtimeHistorial();
     manejarDeepLinkFolio();
