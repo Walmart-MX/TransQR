@@ -300,6 +300,30 @@
   }
   .tab.active { color: var(--blue); border-color: var(--blue); }
 
+  /* ==== Navegacion inferior movil (mismo patron que admin/index.html,
+     para que ambas apps se sientan de la misma familia) ==== */
+  .bottom-nav { display: none; }
+  @media (max-width: 720px) {
+    #tabs-desktop { display: none; }
+    body { padding-bottom: 64px; }
+    .bottom-nav {
+      display: flex;
+      position: fixed; left: 0; right: 0; bottom: 0;
+      background: white; border-top: 1px solid var(--border);
+      box-shadow: 0 -2px 14px rgba(0,0,0,0.1);
+      padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+      z-index: 500;
+    }
+    .bn-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+      background: none; border: none; color: var(--muted); font-family: inherit;
+      font-size: 0.64rem; font-weight: 700; padding: 6px 2px; cursor: pointer; border-radius: 10px;
+      min-height: 52px; justify-content: center;
+    }
+    .bn-item.active { color: var(--blue); }
+    .bn-item svg { width: 22px; height: 22px; flex-shrink: 0; }
+  }
+
   /* ════════════════════════════════
      PANELS
   ════════════════════════════════ */
@@ -1041,10 +1065,13 @@
 
   /* ════════════════════════════════
      PRINT
-
+     Nota: #panel-qr/.qr-card/.btn-print son referencias heredadas del
+     patron de admin/index.html que nunca se implementaron aqui (esta app
+     no genera QR) -- se dejan sin tocar por no ser parte de este cambio,
+     no afectan nada porque esos elementos no existen en el DOM.
   ════════════════════════════════ */
   @media print {
-    header, .tabs, .btn-print, .panel#panel-form, .panel#panel-historial, .panel#panel-misreportes { display: none !important; }
+    header, .tabs, .bottom-nav, .btn-print, .panel#panel-form, .panel#panel-historial, .panel#panel-misreportes, .panel#panel-notificaciones, .panel#panel-perfil { display: none !important; }
     #panel-qr { display: block !important; padding: 0; }
     .qr-card { box-shadow: none; border: 3px solid var(--yellow); }
     body { background: white; }
@@ -1138,10 +1165,31 @@
 <!-- ══════════════════════════════════
      TABS
 ══════════════════════════════════ -->
-<div class="tabs">
-  <div class="tab active" onclick="showTab('form')">Formulario</div>
-  <div class="tab" onclick="showTab('misreportes')">🧾 Mis Reportes</div>
+<div class="tabs" id="tabs-desktop">
+  <div class="tab active" data-tab="form" onclick="showTab('form')">Formulario</div>
+  <div class="tab" data-tab="misreportes" onclick="showTab('misreportes')">Mis Reportes</div>
+  <div class="tab" data-tab="notificaciones" onclick="showTab('notificaciones')">Notificaciones</div>
+  <div class="tab" data-tab="perfil" onclick="showTab('perfil')">Perfil</div>
 </div>
+
+<nav class="bottom-nav">
+  <button type="button" class="bn-item active" data-tab="form" onclick="showTab('form')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+    <span>Reportar</span>
+  </button>
+  <button type="button" class="bn-item" data-tab="misreportes" onclick="showTab('misreportes')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><line x1="8" y1="8" x2="16" y2="8"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="8" y1="16" x2="12" y2="16"></line></svg>
+    <span>Mis Reportes</span>
+  </button>
+  <button type="button" class="bn-item" data-tab="notificaciones" onclick="showTab('notificaciones')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+    <span>Notificaciones</span>
+  </button>
+  <button type="button" class="bn-item" data-tab="perfil" onclick="showTab('perfil')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.2"></circle><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"></path></svg>
+    <span>Perfil</span>
+  </button>
+</nav>
 
 <!-- ══════════════════════════════════
      PANEL FORMULARIO
@@ -1276,20 +1324,55 @@
 </div>
 
 <div class="panel" id="panel-misreportes">
-  <div class="card" id="card-notificaciones-asociado" style="display:none;">
-    <div class="card-title">Notificaciones</div>
-    <p class="historial-nota" style="margin-top:0;">Recibe un aviso en este telefono en cuanto tu reporte cambie de estatus, sin tener que volver a abrir esta pantalla.</p>
-    <button type="button" class="btn-modal-continue" id="btn-activar-notificaciones-asociado" onclick="suscribirNotificacionesAsociado()">Activar notificaciones</button>
-    <div class="seguimiento-estado" id="estado-notificaciones-asociado"></div>
-  </div>
   <div class="card">
-    <div class="card-title">🧾 Mis Reportes</div>
+    <div class="card-title">Mis Reportes</div>
     <p class="historial-nota" style="margin-top:0;">
       Aquí ves únicamente los reportes que <b>tú</b> has enviado desde este teléfono o
       navegador, junto con su estatus de seguimiento más reciente. Si envías un reporte
       desde otro dispositivo, no aparecerá en esta lista.
     </p>
     <div id="mis-reportes-lista"></div>
+  </div>
+</div>
+
+<div class="panel" id="panel-notificaciones">
+  <div class="card" id="card-notificaciones-asociado" style="display:none;">
+    <div class="card-title">Notificaciones</div>
+    <p class="historial-nota" style="margin-top:0;">Recibe un aviso en este telefono en cuanto tu reporte cambie de estatus, sin tener que volver a abrir esta pantalla.</p>
+    <button type="button" class="btn-modal-continue" id="btn-activar-notificaciones-asociado" onclick="suscribirNotificacionesAsociado()">Activar notificaciones</button>
+    <div class="seguimiento-estado" id="estado-notificaciones-asociado"></div>
+  </div>
+  <div class="card" id="card-notificaciones-inactivo" style="display:none;">
+    <div class="card-title">Notificaciones</div>
+    <p class="historial-nota" style="margin-top:0;">Ya tienes las notificaciones activadas en este dispositivo. Te avisaremos en cuanto tu reporte cambie de estatus, aunque esta app este cerrada.</p>
+  </div>
+</div>
+
+<div class="panel" id="panel-perfil">
+  <div class="card">
+    <div class="card-title">Perfil</div>
+    <div class="asociado-resumen" id="perfil-resumen">
+      <div class="avatar" id="perfil-avatar-iniciales">—</div>
+      <div class="asociado-info">
+        <div class="asociado-nombre" id="perfil-nombre">—</div>
+        <div class="asociado-meta" id="perfil-meta">—</div>
+      </div>
+    </div>
+    <div class="row-2" style="margin-top:14px;">
+      <div class="field">
+        <label>Celular registrado</label>
+        <div class="campo-fijo"><span id="perfil-celular">—</span></div>
+      </div>
+      <div class="field">
+        <label>No. de empleado</label>
+        <div class="campo-fijo"><span id="perfil-empleado">—</span></div>
+      </div>
+    </div>
+    <button type="button" class="link-cambiar" style="margin-top:10px;" onclick="cambiarAsociado()">¿No eres tú? Cambiar de asociado</button>
+  </div>
+  <div class="card">
+    <div class="card-title">CEDIS Villahermosa</div>
+    <p class="historial-nota" style="margin-top:0;">Esta app esta configurada unicamente para CEDIS Walmart Villahermosa. Si necesitas reportar un problema de la app (no del transporte), contacta a tu supervisor de Trafico.</p>
   </div>
 </div>
 
@@ -1851,15 +1934,30 @@
   }
 
   function showTab(name) {
-    document.querySelectorAll('.tab').forEach((t, i) =>
-      t.classList.toggle('active', ['form', 'misreportes'][i] === name)
-    );
+    document.querySelectorAll('[data-tab]').forEach(el => el.classList.toggle('active', el.dataset.tab === name));
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.getElementById('panel-' + name).classList.add('active');
 
-    if (name === 'misreportes') {
-      renderizarMisReportes();
-    }
+    if (name === 'misreportes') renderizarMisReportes();
+    if (name === 'notificaciones') mostrarCardNotificacionesSiAplica();
+    if (name === 'perfil') renderizarPerfil();
+  }
+
+  function renderizarPerfil() {
+    const nombre = (document.getElementById('nombre').value || '').trim();
+    const empleado = (document.getElementById('empleado').value || '').trim();
+    const area = (document.getElementById('area').value || '').trim();
+    const celular = (document.getElementById('celular').value || '').trim();
+
+    document.getElementById('perfil-nombre').textContent = nombre || 'Sin datos todavia';
+    document.getElementById('perfil-meta').textContent = [empleado && `No. ${empleado}`, area].filter(Boolean).join(' · ') || '—';
+    document.getElementById('perfil-celular').textContent = celular || '—';
+    document.getElementById('perfil-empleado').textContent = empleado || '—';
+
+    const iniciales = nombre
+      ? nombre.trim().split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase()
+      : '—';
+    document.getElementById('perfil-avatar-iniciales').textContent = iniciales;
   }
 
   function actualizarContador() {
@@ -2176,6 +2274,7 @@
 
   async function mostrarCardNotificacionesSiAplica() {
     const card = document.getElementById('card-notificaciones-asociado');
+    const cardInactivo = document.getElementById('card-notificaciones-inactivo');
     if (!card) return;
     const sesion = obtenerSesionAsociado();
     const soportado = 'serviceWorker' in navigator && 'PushManager' in window;
@@ -2184,7 +2283,8 @@
 
     const registro = await navigator.serviceWorker.ready.catch(() => null);
     const yaSuscrito = registro ? await registro.pushManager.getSubscription() : null;
-    if (!yaSuscrito) card.style.display = 'block';
+    card.style.display = yaSuscrito ? 'none' : 'block';
+    if (cardInactivo) cardInactivo.style.display = yaSuscrito ? 'block' : 'none';
   }
 
   async function suscribirNotificacionesAsociado() {
@@ -2226,6 +2326,8 @@
       estado.textContent = 'Notificaciones activadas en este telefono.';
       estado.className = 'seguimiento-estado ok';
       document.getElementById('card-notificaciones-asociado').style.display = 'none';
+      const cardInactivo = document.getElementById('card-notificaciones-inactivo');
+      if (cardInactivo) cardInactivo.style.display = 'block';
     } catch (e) {
       console.warn('No se pudo activar notificaciones:', e);
       const detalle = (e && (e.message || e.name)) ? `${e.name || ''}: ${e.message || ''}`.trim() : 'error desconocido';

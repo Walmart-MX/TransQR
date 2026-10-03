@@ -2360,6 +2360,18 @@
 
   async function suscribirNotificacionesAdmin() {
     const estado = document.getElementById('estado-notificaciones-admin');
+
+    // Mismo candado que app/index.html: en iPhone, Web Push NO existe fuera
+    // de una PWA instalada a pantalla de inicio -- sin excepcion, es una
+    // restriccion de Apple, no un bug. Sin este chequeo, pushManager.subscribe()
+    // truena con un error generico que no le dice al admin que hacer.
+    const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+    if (esIOS && !estaInstalada()) {
+      estado.textContent = 'En iPhone, Apple solo permite notificaciones si primero agregas esta app a tu pantalla de inicio (boton Compartir -> Agregar a inicio). Instalala y vuelve a intentar desde el icono.';
+      estado.className = 'seguimiento-estado error';
+      return;
+    }
+
     estado.textContent = 'Solicitando permiso...';
     estado.className = 'seguimiento-estado';
     try {
