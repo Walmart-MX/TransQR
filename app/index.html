@@ -473,6 +473,20 @@
     align-items: center;
     gap: 5px;
   }
+  .aviso-confidencialidad {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #eaf6ff;
+    border: 1px solid #bfe2fb;
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--dark);
+  }
+  .aviso-confidencialidad-icono { font-size: 1.1rem; flex-shrink: 0; line-height: 1.3; }
 
   /* Enlace pequeño "cambiar de asociado" bajo el resumen precargado */
   .link-cambiar {
@@ -1196,6 +1210,14 @@
 ══════════════════════════════════ -->
 <div class="panel active" id="panel-form">
 
+  <!-- Aviso de confidencialidad: se pone ANTES de pedir datos personales,
+       justo donde a un asociado le puede dar duda reportar algo del
+       transportista por miedo a represalias. -->
+  <div class="aviso-confidencialidad">
+    <span class="aviso-confidencialidad-icono">🔒</span>
+    <span>Este reporte solo lo revisa el <b>área de Transporte</b>. El transportista o proveedor <b>nunca</b> sabe quién lo levantó — tu identidad queda confidencial.</span>
+  </div>
+
   <!-- Datos del Asociado (v2: precargados, resumen compacto + edición opcional) -->
   <div class="card">
     <div class="card-title">👤 Datos del Asociado</div>
@@ -1282,13 +1304,13 @@
 
     <div class="row-2">
       <div class="field">
-        <label>LT Transportista</label>
+        <label>LT Transportista <span class="req">*</span></label>
         <select id="unidad" onchange="guardarUltimoTransportista()">
           <option value="">— Seleccionar LT —</option>
         </select>
       </div>
       <div class="field">
-        <label>Ruta</label>
+        <label>Ruta <span class="req">*</span></label>
         <select id="ruta" onchange="guardarUltimaParada()">
           <option value="">— Seleccionar parada —</option>
         </select>
@@ -1966,7 +1988,7 @@
   }
 
   function recolectarDatos() {
-    const camposTexto = ['nombre', 'empleado', 'area', 'celular', 'fecha', 'hora', 'descripcion'];
+    const camposTexto = ['nombre', 'empleado', 'area', 'celular', 'turno', 'fecha', 'hora', 'unidad', 'ruta', 'descripcion'];
     let valido = true;
 
     camposTexto.forEach(id => {
@@ -2007,8 +2029,8 @@
       turno:        document.getElementById('turno').value,
       fecha:        document.getElementById('fecha').value,
       hora:         document.getElementById('hora').value,
-      unidad:       document.getElementById('unidad').value || 'No especificado',
-      ruta:         document.getElementById('ruta').value   || 'No especificada',
+      unidad:       document.getElementById('unidad').value,
+      ruta:         document.getElementById('ruta').value,
       tipo_reporte: tipoReporte,
       situaciones,
       descripcion:  document.getElementById('descripcion').value,
