@@ -16,7 +16,7 @@
  * Bump manual de CACHE_VERSION cada vez que cambie el shell de forma
  * relevante (no hay build step en este proyecto, es intencional).
  */
-const CACHE_VERSION = 'transqr-app-shell-v8';
+const CACHE_VERSION = 'transqr-app-shell-v9';
 const ASSETS_SHELL = [
   './',
   './index.html',

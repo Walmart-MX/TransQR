@@ -1435,7 +1435,20 @@
 
   const supabaseClient = (SUPABASE_URL.includes('TU-PROYECTO'))
     ? null
-    : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Bug real detectado en campo (2026-10): si en este mismo telefono/
+    // navegador alguna vez se inicio sesion en /admin/ (misma app, misma
+    // sesion de localStorage por ser el mismo origen), supabase-js recoge
+    // esa sesion de Auth automaticamente aqui tambien -- y las peticiones
+    // dejan de mandarse como 'anon' para mandarse como 'authenticated'.
+    // reportes_transporte NO tiene politica de INSERT para 'authenticated'
+    // (solo para 'anon'), asi que el INSERT se rechaza con "violates row
+    // level security policy" y el reporte se queda atorado en la cola local
+    // para siempre, aunque la red este perfecta. El asociado nunca necesita
+    // Auth -- se desactiva la persistencia por completo para que SIEMPRE
+    // hable como anon, sin importar que sesion haya quedado guardada.
+    : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+      });
 
   /*
     ÚNICO CEDIS (Villahermosa) con sus dos naves — Perecederos y SECOS.
