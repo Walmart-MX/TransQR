@@ -2258,6 +2258,15 @@
 
   verificarSesionAdmin();
   window.addEventListener('online', sincronizarPendientes);
+  // Mismo hueco real detectado en app/index.html: un wifi puede tener internet
+  // general pero bloquear especificamente *.supabase.co -- el evento 'online'
+  // nunca se vuelve a disparar en ese caso y la cola queda atorada para
+  // siempre. Reintento periodico + al recuperar el foco, sin depender de ese
+  // evento.
+  setInterval(sincronizarPendientes, 45000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) sincronizarPendientes();
+  });
 
   /* PWA: registro de Service Worker + banners de instalacion (mismo patron que app/) */
   const CLAVE_BANNER_INSTALAR_OCULTO = 'wm_transporte_admin_banner_instalar_oculto';

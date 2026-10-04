@@ -4,7 +4,7 @@
  * pero con su propio nombre de cache y su propio comportamiento de clic en
  * notificacion (abre el Historial, no el formulario).
  */
-const CACHE_VERSION = 'transqr-admin-shell-v3';
+const CACHE_VERSION = 'transqr-admin-shell-v4';
 const ASSETS_SHELL = [
   './',
   './index.html',

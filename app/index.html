@@ -2250,6 +2250,13 @@
   }
 
   sincronizarPendientes();
+  // El evento 'online' del navegador NO alcanza a cubrir el caso real que se
+  // vio en campo: un wifi (ej. el del CEDIS) puede tener internet general
+  // pero bloquear especificamente *.supabase.co -- el telefono sigue
+  // "online" todo el tiempo, ese evento nunca se vuelve a disparar, y los
+  // reportes se quedan atorados en la cola local para siempre. Reintento
+  // cada 45s mientras la app este abierta, sin importar el estado de 'online'.
+  setInterval(sincronizarPendientes, 45000);
   window.addEventListener('online', sincronizarPendientes);
 
   /* "Tiempo real" para Mis Reportes (Fase 14c): reportes_transporte es
@@ -2270,7 +2277,10 @@
     if (!document.hidden && document.getElementById('panel-misreportes').classList.contains('active')) {
       renderizarMisReportes();
     }
-    if (!document.hidden) refrescarFechaHoraTurnoSiNoTocado();
+    if (!document.hidden) {
+      refrescarFechaHoraTurnoSiNoTocado();
+      sincronizarPendientes();
+    }
   });
 
   /* PWA: registro de Service Worker + banners de instalacion */
