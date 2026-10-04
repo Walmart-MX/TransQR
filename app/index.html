@@ -2468,6 +2468,24 @@
 
     estado.textContent = 'Solicitando permiso...';
     estado.className = 'seguimiento-estado';
+
+    // Bug real reportado en campo (2026-10, Android): una vez que el
+    // navegador queda en estado "denegado", Notification.requestPermission()
+    // NI SIQUIERA vuelve a mostrar el dialogo -- se resuelve solo como
+    // 'denied' en silencio (proteccion anti-spam del propio navegador). El
+    // asociado toca "Activar" una y otra vez sin que pase nada visible, sin
+    // forma de saber que el problema ya no esta en esta app sino en los
+    // ajustes del telefono. Se detecta este caso ANTES de llamar a
+    // requestPermission (que seria un no-op) y se dan los pasos exactos.
+    if (Notification.permission === 'denied') {
+      estado.innerHTML = 'Ya habías bloqueado las notificaciones antes, así que el navegador ya no puede volver a preguntar solo. Para desbloquearlas en Android:<br><br>' +
+        '<b>Opción 1 (más directa):</b> abre Chrome, entra a esta misma página, toca el icono de candado o "i" junto a la dirección, entra a "Permisos" y cambia Notificaciones a "Permitir".<br><br>' +
+        '<b>Opción 2:</b> Ajustes del teléfono → Aplicaciones → busca esta app (o Chrome) → Notificaciones → Activar.<br><br>' +
+        'Después cierra esta app por completo y vuelve a abrirla.';
+      estado.className = 'seguimiento-estado error';
+      return;
+    }
+
     try {
       const permiso = await Notification.requestPermission();
       if (permiso !== 'granted') {
