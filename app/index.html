@@ -662,6 +662,24 @@
     font-size: 0.9rem;
     animation: slideUp 0.3s ease;
   }
+  #toast.pendiente {
+    background: linear-gradient(135deg, #d97706, #b45309);
+  }
+  .badge-pendientes {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #9a3412;
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    margin-top: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-align: center;
+    justify-content: center;
+  }
 
   /* ════════════════════════════════
      PANEL QR — DISEÑO CORPORATIVO
@@ -1341,7 +1359,8 @@
     <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
     Enviar Reporte por WhatsApp
   </button>
-  <div id="toast">✔ Se abrió WhatsApp con el reporte listo. Solo presiona "Enviar" dentro de WhatsApp para completar.</div>
+  <div id="badge-pendientes" class="badge-pendientes" style="display:none;"></div>
+  <div id="toast"></div>
 
 </div>
 
@@ -2098,7 +2117,13 @@
     const datos = recolectarDatos();
     if (!datos) return;
 
-    guardarEnHistorial(datos);
+    // Antes esto no se esperaba (ni se avisaba el resultado): WhatsApp se
+    // abria igual aunque el guardado en Supabase fallara en silencio -- el
+    // asociado creia que ya habia quedado registrado y nunca se enteraba de
+    // que se quedo atorado en la cola local de su telefono (caso real visto
+    // en campo con el wifi del CEDIS bloqueando supabase.co). Ahora si se
+    // espera, y el mensaje cambia segun lo que de verdad paso.
+    const guardadoEnServidor = await guardarEnHistorial(datos);
 
     guardarAsociadoDesdeReporte(datos);
     registrarReporteLocal(datos);
@@ -2109,9 +2134,21 @@
 
     window.open(waUrl, '_blank');
 
+    mostrarToastEnvio(guardadoEnServidor);
+    actualizarBadgePendientes();
+  }
+
+  function mostrarToastEnvio(guardadoEnServidor) {
     const toast = document.getElementById('toast');
+    if (guardadoEnServidor) {
+      toast.textContent = '✔ Reporte guardado y WhatsApp abierto. Solo presiona "Enviar" dentro de WhatsApp para completar.';
+      toast.classList.remove('pendiente');
+    } else {
+      toast.textContent = '⚠️ Se abrió WhatsApp, pero el reporte NO se pudo enviar al sistema todavía (sin conexión a internet o la red bloquea el servidor). Se reintentará solo en cuanto haya conexión — no cierres ni borres los datos de esta app.';
+      toast.classList.add('pendiente');
+    }
     toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 6000);
+    setTimeout(() => { toast.style.display = 'none'; }, guardadoEnServidor ? 6000 : 10000);
   }
 
   const CLAVE_PENDIENTES = 'wm_transporte_pendientes_v1';
@@ -2132,15 +2169,32 @@
     } catch (e) {
       console.warn('No se pudo encolar el reporte pendiente:', e);
     }
+    actualizarBadgePendientes();
+  }
+
+  function actualizarBadgePendientes() {
+    const badge = document.getElementById('badge-pendientes');
+    if (!badge) return;
+    const n = obtenerPendientes().length;
+    if (n > 0) {
+      badge.textContent = n === 1
+        ? 'Tienes 1 reporte sin enviar al sistema todavia (sin conexion). Se reintentara solo.'
+        : `Tienes ${n} reportes sin enviar al sistema todavia (sin conexion). Se reintentaran solos.`;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
   }
 
   async function guardarEnHistorial(datos) {
-    if (!supabaseClient) { guardarPendienteLocal(datos); return; }
+    if (!supabaseClient) { guardarPendienteLocal(datos); return false; }
     const { error } = await supabaseClient.from(NOMBRE_TABLA).insert([datos]);
     if (error) {
       console.warn('No se pudo guardar en Supabase, se encola localmente:', error);
       guardarPendienteLocal(datos);
+      return false;
     }
+    return true;
   }
 
   function obtenerMisReportesLocales() {
@@ -2226,6 +2280,7 @@
     }
     const restantes = pendientes.filter(p => !exitosos.includes(p));
     localStorage.setItem(CLAVE_PENDIENTES, JSON.stringify(restantes));
+    actualizarBadgePendientes();
     if (exitosos.length && document.getElementById('panel-misreportes').classList.contains('active')) renderizarMisReportes();
   }
 
@@ -2249,6 +2304,7 @@
     mostrarModalBienvenida();
   }
 
+  actualizarBadgePendientes();
   sincronizarPendientes();
   // El evento 'online' del navegador NO alcanza a cubrir el caso real que se
   // vio en campo: un wifi (ej. el del CEDIS) puede tener internet general
