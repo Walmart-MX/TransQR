@@ -4,7 +4,7 @@
  * pero con su propio nombre de cache y su propio comportamiento de clic en
  * notificacion (abre el Historial, no el formulario).
  */
-const CACHE_VERSION = 'transqr-admin-shell-v4';
+const CACHE_VERSION = 'transqr-admin-shell-v5';
 const ASSETS_SHELL = [
   './',
   './index.html',
@@ -55,12 +55,26 @@ self.addEventListener('push', (event) => {
   let datos = { title: 'TransQR Admin', body: 'Nuevo movimiento en Historial.', url: './' };
   try { if (event.data) datos = { ...datos, ...event.data.json() }; } catch (e) { /* payload no-JSON */ }
 
+  // Mas presencia (pedido real 2026-10): el admin se puede estar perdiendo
+  // reportes porque la notificacion desaparecia sola a los pocos segundos y
+  // no vibraba distinto a cualquier otra app. requireInteraction la deja fija
+  // hasta que la toque o la cierre a mano; el patron de vibracion es
+  // deliberadamente largo/distinto (no el default corto); tag+renotify hace
+  // que CADA reporte nuevo tenga su propia notificacion apilada (no se pisan
+  // entre si por folio) pero si llega dos veces el mismo folio si vuelve a
+  // vibrar/sonar en vez de quedar muda la segunda vez. El boton de accion
+  // evita tener que adivinar donde tocar.
   event.waitUntil(
     self.registration.showNotification(datos.title, {
       body: datos.body,
       icon: './icons/icon-192.png',
       badge: './icons/icon-192.png',
       data: { url: datos.url || './' },
+      tag: datos.tag || undefined,
+      renotify: Boolean(datos.tag),
+      requireInteraction: true,
+      vibrate: [300, 150, 300, 150, 300],
+      actions: [{ action: 'ver', title: 'Ver reporte' }],
     })
   );
 });

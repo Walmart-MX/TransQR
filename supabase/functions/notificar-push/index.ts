@@ -8,6 +8,12 @@
 // No se puede mandar Web Push directo desde el navegador: se necesita una
 // llave privada (VAPID) que jamas debe viajar al cliente, por eso esto vive
 // en una Edge Function y no en app/index.html ni admin/index.html.
+//
+// La respuesta HTTP de esta funcion queda registrada en
+// `net._http_response.content` (la tabla de pg_net) -- por eso aqui se
+// devuelve siempre un JSON con el detalle de que paso, en vez de un simple
+// "OK": es la forma mas facil de diagnosticar sin acceso directo a los
+// logs de la funcion.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
@@ -17,8 +23,6 @@ const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY')!;
 const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY')!;
 const VAPID_SUBJECT = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:transporte@example.com';
-// Secreto compartido para verificar que la llamada viene del Webhook de
-// Supabase y no de cualquiera que adivine la URL de la funcion.
 const WEBHOOK_SECRET = Deno.env.get('WEBHOOK_SECRET')!;
 
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
@@ -31,75 +35,104 @@ function resumenSituacion(record: Record<string, unknown>): string {
   return desc ? `${tipo}: ${desc}` : tipo;
 }
 
-async function enviarATodas(subs: { endpoint: string; p256dh: string; auth_key: string; id: string }[], payload: unknown) {
-  await Promise.all(subs.map(async (s) => {
+type Suscripcion = { id: string; endpoint: string; p256dh: string; auth_key: string };
+type ResultadoEnvio = { endpoint: string; ok: boolean; detalle: string };
+
+// urgency 'high' + TTL corto: evita que Android/FCM retenga el push bajo
+// Doze/App Standby hasta que el telefono "despierte" (que normalmente pasa
+// justo cuando el usuario abre la app -- el sintoma que motivo este cambio).
+// TTL de 1 hora: si el dispositivo esta offline mas tiempo que eso, FCM
+// descarta el mensaje en vez de entregar algo ya viejo.
+const OPCIONES_ENVIO = { TTL: 3600, urgency: 'high' as const };
+
+async function enviarATodas(subs: Suscripcion[], payload: unknown): Promise<ResultadoEnvio[]> {
+  return Promise.all(subs.map(async (s): Promise<ResultadoEnvio> => {
     try {
       await webpush.sendNotification(
         { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth_key } },
-        JSON.stringify(payload)
+        JSON.stringify(payload),
+        OPCIONES_ENVIO
       );
+      return { endpoint: s.endpoint, ok: true, detalle: 'enviado' };
     } catch (err) {
-      // 404/410 = el navegador invalido la suscripcion (usuario desinstalo,
-      // limpio datos, etc.) -- se desactiva para no reintentar por siempre.
-      const status = (err as { statusCode?: number }).statusCode;
-      if (status === 404 || status === 410) {
+      const statusCode = (err as { statusCode?: number }).statusCode;
+      const mensaje = (err as { message?: string }).message ?? String(err);
+      if (statusCode === 404 || statusCode === 410) {
         await supabase.from('push_subscriptions').update({ activo: false }).eq('id', s.id);
-      } else {
-        console.error('Error enviando push a', s.endpoint, err);
+        return { endpoint: s.endpoint, ok: false, detalle: `suscripcion invalida (${statusCode}), desactivada` };
       }
+      return { endpoint: s.endpoint, ok: false, detalle: `error ${statusCode ?? ''}: ${mensaje}` };
     }
   }));
 }
 
 Deno.serve(async (req) => {
   if (req.headers.get('x-webhook-secret') !== WEBHOOK_SECRET) {
-    return new Response('No autorizado', { status: 401 });
+    return new Response(JSON.stringify({ ok: false, motivo: 'secreto invalido' }), { status: 401 });
   }
 
-  const body = await req.json();
-  const { type, table, record, old_record } = body as {
-    type: 'INSERT' | 'UPDATE' | 'DELETE';
-    table: string;
-    record: Record<string, unknown>;
-    old_record?: Record<string, unknown>;
-  };
+  let body: { type: string; table: string; record: Record<string, unknown>; old_record?: Record<string, unknown> };
+  try {
+    body = await req.json();
+  } catch (e) {
+    return new Response(JSON.stringify({ ok: false, motivo: 'body no es JSON valido', error: String(e) }), { status: 400 });
+  }
+
+  const { type, table, record, old_record } = body;
 
   if (table !== 'reportes_transporte') {
-    return new Response('Tabla no manejada, se ignora.', { status: 200 });
+    return new Response(JSON.stringify({ ok: true, motivo: 'tabla no manejada, se ignora', table }), { status: 200 });
   }
 
+  const diagnostico: Record<string, unknown> = { ok: true, type, table };
+
   if (type === 'INSERT') {
-    const { data: subsAdmin } = await supabase
+    const { data: subsAdmin, error } = await supabase
       .from('push_subscriptions')
       .select('id, endpoint, p256dh, auth_key')
       .eq('rol', 'admin')
       .eq('activo', true);
 
-    if (subsAdmin?.length) {
-      await enviarATodas(subsAdmin, {
+    diagnostico.consulta_admin_error = error ? error.message : null;
+    diagnostico.suscriptores_admin_encontrados = subsAdmin?.length ?? 0;
+
+    if (error) {
+      diagnostico.ok = false;
+    } else if (subsAdmin?.length) {
+      diagnostico.resultados = await enviarATodas(subsAdmin, {
         title: 'Nuevo reporte de transporte',
         body: resumenSituacion(record),
         url: `./?folio=${record.folio}`,
+        tag: `reporte-${record.folio}`,
       });
     }
   }
 
   if (type === 'UPDATE' && old_record && record.estatus !== old_record.estatus && record.num_empleado) {
-    const { data: subsAsociado } = await supabase
+    const { data: subsAsociado, error } = await supabase
       .from('push_subscriptions')
       .select('id, endpoint, p256dh, auth_key')
       .eq('rol', 'asociado')
       .eq('num_empleado', record.num_empleado as string)
       .eq('activo', true);
 
-    if (subsAsociado?.length) {
-      await enviarATodas(subsAsociado, {
+    diagnostico.consulta_asociado_error = error ? error.message : null;
+    diagnostico.suscriptores_asociado_encontrados = subsAsociado?.length ?? 0;
+
+    if (error) {
+      diagnostico.ok = false;
+    } else if (subsAsociado?.length) {
+      diagnostico.resultados_asociado = await enviarATodas(subsAsociado, {
         title: 'Tu reporte cambio de estatus',
         body: `Ahora esta: ${record.estatus}`,
-        url: './',
+        url: `./?folio=${record.folio}`,
+        tag: `estatus-${record.folio}`,
       });
     }
   }
 
-  return new Response('OK', { status: 200 });
+  return new Response(JSON.stringify(diagnostico), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
 });
