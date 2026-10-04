@@ -1868,6 +1868,21 @@
   // refrescan solos mientras el usuario no los haya tocado a mano (si los
   // edita para un reporte de un evento anterior, eso se respeta y ya no se
   // vuelve a pisar).
+  // Segundo bug real detectado en campo (2026-10, mas grave que el de arriba):
+  // <input type="date">.valueAsDate SIEMPRE trabaja en UTC, nunca en hora
+  // local -- es una rareza documentada del estandar HTML. Mexico esta en
+  // UTC-6, asi que cualquier hora local despues de las 18:00 ya cruzo a
+  // "manana" en UTC, y el campo terminaba lleno con la fecha de MANANA en
+  // vez de hoy. Arreglo: usar .value con una fecha formateada a mano en
+  // hora local (mismo patron que ya usa admin/index.html en
+  // formatearFechaLocal), nunca .valueAsDate.
+  function formatearFechaLocal(fecha) {
+    const y = fecha.getFullYear();
+    const m = String(fecha.getMonth() + 1).padStart(2, '0');
+    const d = String(fecha.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   let fechaTurnoTocadoManualmente = false;
 
   function marcarFechaTurnoTocadoManualmente() {
@@ -1882,7 +1897,7 @@
 
   function inicializarFechaHoraTurno() {
     const ahora = new Date();
-    document.getElementById('fecha').valueAsDate = ahora;
+    document.getElementById('fecha').value = formatearFechaLocal(ahora);
     capturarHoraActual();
     document.getElementById('turno').value = calcularTurno(document.getElementById('hora').value);
     fechaTurnoTocadoManualmente = false;
